@@ -1,0 +1,21 @@
+HTA(Humble Theft Auto) is an (incomplete) implementation of the SA-MP mod for GTA:SA in Python.
+
+Brief SA-MP description:
+SA-MP(San Andreas Multiplayer) is a mod for the game GTA:SA(Grand Theft Auto:
+San Andreas) that adds multiplayer support(up to 1000 simultaneous players)
+using the Raknet networking library.
+The mod features:
+ - a chat box(T key) where users may type text messages and commands.
+ - a list of connected players(TAB key) that displays their id[0,999], name,
+ score and ping.
+ - a kill feed showing players deaths(killer, killee and death reason).
+ - multi modal dialog boxes for text and password input, list(including row
+ selection) and message. All of them have customizable buttons.
+ - highly customizable textdraws. They can be selectable, display text(custom
+ size, font, color), image(using model id).
+ - functions to control gameplay, e.g. setting world time and weather, spawing
+ vehicles, setting player attributes(position, viewangles, health, armor, skin,
+ spawn coordinates...), and many others.
+
+masterserver: GET http://lists.sa-mp.com/0.3.7/internet ; lines in the format ipv4:port
+not sure how this works; announce to masterserver???: GET http://server.sa-mp.com/0.3.7/announce/PORT
