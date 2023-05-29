@@ -53,7 +53,7 @@ class RPC(enum.IntEnum):
     PLAYER_BUBBLE               = 59  # PlayerBubble
     SEND_GAME_TIME_UPDATE       = 60  # SendGameTimeUpdate
     SHOW_DIALOG                 = 61  # ShowDialog
-    DIALOG_BUTTON             = 62  # DialogResponse
+    DIALOG_RESPONSE             = 62  # DialogResponse
     DESTROY_PICKUP              = 63  # DestroyPickup
     LINK_VEHICLE_TO_INTERIOR    = 65  # LinkVehicleToInterior
     SET_PLAYER_ARMOR            = 66  # SetPlayerArmor
@@ -1416,9 +1416,9 @@ class DIALOG_BUTTON(enum.IntEnum):
 
 class DialogResponse(Rpc):
     def __init__(self, dialog_id, button=DIALOG_BUTTON.LEFT, list_index=INVALID_ID, text=''):
-        super().__init__(RPC.DIALOG_BUTTON)
+        super().__init__(RPC.DIALOG_RESPONSE)
         self.dialog_id = dialog_id
-        self.button = DIALOG_BUTTON(button)
+        self.button = button
         self.list_index = list_index
         self.text = text
 
@@ -1437,11 +1437,11 @@ class DialogResponse(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         dialog_id = bs.read_u16()
-        button = DIALOG_BUTTON(bs.read_u8())
+        button = bs.read_u8()
         list_index = bs.read_u16()
         text = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return DialogResponse(dialog_id, button, list_index, text)
-RPC.DIALOG_BUTTON.decode_rpc_payload = DialogResponse.decode_rpc_payload
+RPC.DIALOG_RESPONSE.decode_rpc_payload = DialogResponse.decode_rpc_payload
 
 ''' S2C
 Server sends to destroy a pickup created with CreatePickup
