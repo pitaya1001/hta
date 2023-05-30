@@ -29,6 +29,7 @@ INVALID_ID = 0xffff # 2**16-1
 INVALID_WEAPON_ID = 0xffffffff
 
 SAMP_ENCODING = 'latin1' # iso-8859-1
+# cp1251?
 
 class Weapon:
     def __init__(self, id=INVALID_WEAPON_ID, ammo=0):
