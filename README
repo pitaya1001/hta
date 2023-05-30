@@ -1,6 +1,6 @@
 HTA(Humble Theft Auto) is an (incomplete) implementation of the SA-MP mod for GTA:SA in Python.
 
-INSTRUCTIONS
+INSTALLATION
  install python
  cd sa
  pip install -e .
