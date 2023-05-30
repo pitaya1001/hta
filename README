@@ -1,5 +1,10 @@
 HTA(Humble Theft Auto) is an (incomplete) implementation of the SA-MP mod for GTA:SA in Python.
 
+INSTRUCTIONS
+ install python
+ cd sa
+ pip install -e .
+
 Brief SA-MP description:
 SA-MP(San Andreas Multiplayer) is a mod for the game GTA:SA(Grand Theft Auto:
 San Andreas) that adds multiplayer support(up to 1000 simultaneous players)
