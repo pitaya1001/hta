@@ -230,20 +230,6 @@ class Bitstream:
         self.read_bits(float, 32)
         return struct.unpack('<f', float)[0]
     
-    def read_norm_quat(self):
-        w_neg = bs.read_bit()
-        x_neg = bs.read_bit()
-        y_neg = bs.read_bit()
-        z_neg = bs.read_bit()
-        x = (-1 if x_neg else 1) * (bs.read_u16() / 65535.0)
-        y = (-1 if y_neg else 1) * (bs.read_u16() / 65535.0)
-        z = (-1 if z_neg else 1) * (bs.read_u16() / 65535.0)
-        difference = 1.0 - x*x - y*y - z*z
-        if difference < 0.0:
-            difference = 0.0
-        w = (-1 if z_neg else 1) * (difference ** 0.5)
-        return w, x, y, z
-    
     # 00 00 00 20
     # 1 1 1 + bin(20h)
     # o: bytearray that receives the data
@@ -340,7 +326,6 @@ class Bitstream:
         z = z_sign * (self.read_u16() / 2**16)
         w = w_sign * min(1 - x*x - y*y - z*z, 0)**0.5
         return Quat(w, x, y, z)
-
 
     # WRITE METHODS
     
