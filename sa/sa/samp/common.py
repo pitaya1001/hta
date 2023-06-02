@@ -39,7 +39,12 @@ class Weapon:
     def __str__(self):
         return f'<Weapon {self.id} - {self.ammo}>'
 
-
+class Color:
+    def __init__(self, value):
+        self.value = value
+    
+    def __str__(self):
+        return f'{self.value:08x}'
 
 # TODO: fix tables
 # https://gtamods.com/wiki/GXT
