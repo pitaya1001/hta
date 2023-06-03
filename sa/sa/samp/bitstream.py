@@ -12,8 +12,6 @@ def DIV_INT_CEIL(a, b): return (a - 1) // b + 1
 # io: input offset in bits
 # oo: output offset in bits
 def copy_bits(i, o, n, io, oo):
-    #print(f'copy_bits(n={n} io={io} oo={oo})')
-    
     # determine helper variables    
     ibi = io // 8 # index(in bytes) in input of first byte read from
     obi = oo // 8 # index(in bytes) in output first byte written to
@@ -75,7 +73,6 @@ def copy_bits(i, o, n, io, oo):
             input_one_byte = False # 2
         
         bits_written += bits_just_written
-        #print(f'j={j} obo={obo} obr={obr} ibo={ibo} ibr={ibr} input_one_byte={input_one_byte} bits_just_written={bits_just_written} bits_written={bits_written}')
         
         # calculate input bits
         if input_one_byte:
@@ -87,8 +84,6 @@ def copy_bits(i, o, n, io, oo):
             hi = (i[ibi + k] & (0xff >> ibo))
             lo = i[ibi + k + 1] >> ibr
             byte = (hi << lo_bit_count) | lo
-            #print(f'bit_count={bit_count}')
-        #print(f'byte={byte:08b}')
         if ibo + bits_just_written >= 8:
             k += 1
         
@@ -169,7 +164,6 @@ class Bitstream:
             raise BitstreamTooSmall
         bit = (self.data[self.read_offset // 8] >> (7 - self.read_offset % 8)) & 1
         self.read_offset += 1
-        #print(f'read_bit -> {bit}; read_offset={self.read_offset}')
         return bit
     
     def read_bool(self):
@@ -195,15 +189,9 @@ class Bitstream:
         self.align_read_to_byte_boundary()
         if self.read_offset + bit_count > self.len:
             raise BitstreamTooSmall
-        #print(f'  read_aligned={byte_count} roa={self.read_offset}')
         for j in range(byte_count):
             o[j] = self.data[(self.read_offset // 8) + j]
         self.read_offset += bit_count
-        
-        #print('  output - ', end='')
-        #for i in range(byte_count):
-        #    print(f'{o[i]:08b} ',end='')
-        #print()
     
     def read_u8(self):
         b = bytearray(1)
@@ -234,7 +222,6 @@ class Bitstream:
     # 1 1 1 + bin(20h)
     # o: bytearray that receives the data
     def read_compressed(self, o, byte_count):
-        #print(f'read_compressed; byte_count={byte_count}; read_offset={self.read_offset}')
         one_count = 0
         for i in range(byte_count):
             if one_count == byte_count - 1:
@@ -337,7 +324,6 @@ class Bitstream:
             self.data[self.write_offset // 8] |= 1 << (7 - (self.write_offset % 8))
         else: # clear bit
             self.data[self.write_offset // 8] &= ~(1 << (7 - (self.write_offset % 8)))
-        #log(f'write bit {bit} @ {self.write_offset}')
         self.write_offset += 1
         self.update_len()
     
@@ -346,7 +332,6 @@ class Bitstream:
     
     def write_bits(self, i, n, io = 0):
         copy_bits(i, self.data, n, io, self.write_offset)
-        #log(f'write bits [{i.hex(" ")}]({n}) @ {self.write_offset}')
         self.write_offset += n
         self.update_len()
     
@@ -358,7 +343,6 @@ class Bitstream:
         self.align_write_to_byte_boundary()
         for i in range(len(buffer)):
             self.data[self.write_offset // 8 + i] = buffer[i]
-        #log(f'write_aligned [{buffer.hex(" ")}] @ {self.write_offset}')
         self.write_offset += len(buffer) * 8
         self.update_len()
     
@@ -386,21 +370,16 @@ class Bitstream:
     
     def write_compressed(self, b):
         i = len(b) - 1
-        #log(f'cb={i} bm={0}')
         while i > 0:
-            #log(f'input[{i}]={b[i]:02x}')
             if b[i] == 0x00:
                 self.write_bit(1)
-                #log('write bit=1 (0x00)')
             else:
                 self.write_bit(0)
                 self.write_bits(b, (i + 1) * 8)
-                #log('write bit=0, write bits and return')
                 return
             i -= 1
         
         bit = int((b[i] & 0xF0) == 0x00)
-        #log(f'{1 if bit else 2}')
         self.write_bit(bit)
         sz = 4 if bit else 8
         self.write_bits(b[i:i+1], sz, sz % 8)
@@ -409,7 +388,6 @@ class Bitstream:
         b = bytearray(2)
         b[0] = u16 & 0xff
         b[1] = u16 >> 8
-        #log(f'write_compressed_u16({u16}) b[0]={b[0]:02x} b[1]={b[1]:02x}')
         self.write_compressed(b)
     
     def write_compressed_u32(self, u32):
