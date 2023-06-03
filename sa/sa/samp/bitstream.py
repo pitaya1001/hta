@@ -101,7 +101,7 @@ class Bitstream:
             self.len = maximum_data_len_in_bits
         else:
             if data_len_in_bits > maximum_data_len_in_bits:
-                raise Exception('bad data_len_in_bits')
+                raise ValueError('bad data_len_in_bits')
             self.len = data_len_in_bits
         self.data = data if data else bytearray(max(capacity, TO_BYTES(self.len)))
         self.read_offset = 0 # read offset in bits
