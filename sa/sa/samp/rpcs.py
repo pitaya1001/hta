@@ -2208,8 +2208,16 @@ class SetPlayerWantedLevel(Rpc):
     def decode_rpc_payload(bs):
         return SetPlayerWantedLevel()
 
+class TEXTDRAW_FLAG(enum.IntEnum):
+    BOX = (1 << 7),
+    LEFT = (1 << 6),
+    RIGHT = (1 << 5),
+    CENTER = (1 << 4),
+    PROPORTIONAL = (1 << 3),
+
 '''
 The x,y coordinate is the top left coordinate for the text draw area based on a 640x480 "canvas" (irrespective of screen resolution).
+flags: see TEXTDRAW_FLAG
 '''
 class ShowTextdraw(Rpc):
     def __init__(self, textdraw_id, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, pos, model_id, rot, zoom, color1, color2, text):
@@ -2236,18 +2244,18 @@ class ShowTextdraw(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
         bs.write_u8(self.flags)
-        self.letter_size.encode(bs)
+        bs.write_vec2(self.letter_size)
         bs.write_u32(self.letter_color)
-        self.line_size.encode(bs)
+        bs.write_vec2(self.line_size)
         bs.write_u32(self.box_color)
         bs.write_u8(self.shadow)
         bs.write_u8(self.outline)
         bs.write_u32(self.background_color)
         bs.write_u8(self.style)
         bs.write_u8(self.clickable)
-        bs.write_vec3(self.pos)
+        bs.write_vec2(self.pos)
         bs.write_u16(self.model_id)
-        self.rot.encode(bs)
+        bs.write_vec3(self.rot)
         bs.write_float(self.zoom)
         bs.write_u16(self.color1)
         bs.write_u16(self.color2)
