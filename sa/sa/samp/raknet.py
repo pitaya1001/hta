@@ -752,9 +752,6 @@ class Peer:
         self.first_message_time = None
         self.out_bs = Bitstream(capacity=1500)
         
-        #self.message_count = 0
-        #self.message_total_size = 0
-        
         '''
         For every reliable message received from the peer, we add its sequence
         number to 'send_acks'. For every packet we send, we send as much
@@ -766,9 +763,6 @@ class Peer:
         #self.send_acks_lock = threading.Lock()
         
         self.split_packets = []
-        
-        #self.sequenced_message_read_indexes = [0] * ORDERED_STREAMS_COUNT
-        #self.sequenced_message_write_indexes = [0] * ORDERED_STREAMS_COUNT
         
         self.ordered_packet_write_index = [0] * ORDERED_STREAMS_COUNT
         self.ordered_packet_read_index = [0] * ORDERED_STREAMS_COUNT
@@ -796,7 +790,6 @@ class Peer:
         raise NotImplementedError('You must implement Peer.sendto()')
     
     def push_message(self, message, reliability=RELIABILITY.RELIABLE, priority=PRIORITY.HIGH, ordering_channel=None):
-        #print('c',message)
         self.push_encoded_message(self.encode_message(message), reliability, priority, ordering_channel)
     
     def push_encoded_message(self, message_data, reliability=RELIABILITY.RELIABLE, priority=PRIORITY.HIGH, ordering_channel=None):
@@ -914,7 +907,6 @@ class Peer:
                         self.sequenced_packet_read_index[packet.ordering_channel] = (packet.ordering_index + 1) % (2**16)
                 
                 if packet.split_id != None:
-                    #print('split packet len(split_packets)=',len(split_packets), packet)
                     now = time.time()
                     packet.time = now
                     self.split_packets.append(packet)
@@ -924,12 +916,10 @@ class Peer:
                     for p in self.split_packets[:]:
                         # remove split packets older than 10s
                         if now - p.time > 10 * 1000:
-                            #print('remove split packet',p)
                             self.split_packets.remove(p)
                             continue
                         
                         # find related split packets
-                        #if p.split_id == self.split_message_id:
                         if p.split_id == packet.split_id:
                             index_sum += p.split_index
                             count += 1
@@ -940,7 +930,6 @@ class Peer:
                         
                         # remove split packets from list
                         for p in self.split_packets[:]:
-                            #if p.split_id == self.split_message_id:
                             if p.split_id == packet.split_id:
                                 parts[p.split_index] = p
                                 self.split_packets.remove(p)
@@ -990,10 +979,8 @@ class Peer:
                 
                 message = self.decode_message(packet.payload)
                 self.handle_connected_message(message, packet)
-                #self.message_count += 1
         except Exception as e: # bad packet
             e.add_note(f'Peer.handle_packet(data={data.hex(" ")})')
-            #raise e
             log(traceback.format_exc())
 
     def handle_packet(self, data):
@@ -1003,7 +990,6 @@ class Peer:
             self.handle_unconnected_packet(data)
 
     def handle_unconnected_message(self, message):
-        #print('s',message)
         if message.id == MSG.OPEN_CONNECTION_REPLY:
             self.connected = True
         for callback in self.unconnected_message_callbacks:
@@ -1011,22 +997,11 @@ class Peer:
                 return
 
     def handle_connected_message(self, message, internal_packet):
-        #if not( (message.id == MSG.RPC and message.rpc_id in [RPC.SET_TEXTDRAW_TEXT,RPC.REMOVE_BUILDING,RPC.CREATE_OBJECT])):
-        #    print('s',message)
-        
         for callback in self.connected_message_callbacks:
             if callback(message, internal_packet, self) == True:
                 return
-        
-        #if message.id == MSG.NEW_INCOMING_CONNECTION:
-        #    self.push_message(InternalPing(get_time()), RELIABILITY.UNRELIABLE, PRIORITY.SYSTEM)
-        #    #self.push_message(ReceivedStaticData(b''), RELIABILITY.RELIABLE, PRIORITY.SYSTEM)
-        #    #self.push_message(DetectLostConnections(), RELIABILITY.RELIABLE, PRIORITY.SYSTEM)
-        #if message.id == MSG.INTERNAL_PING:
-        #    self.push_message(ConnectedPong(message.time, get_time()), RELIABILITY.UNRELIABLE, PRIORITY.SYSTEM)
-    
+      
     def send_unconnected_message(self, message):
-        #print('c',message)
         if message.id == MSG.OPEN_CONNECTION_REPLY:
             self.connected = True
         self.sendto(self.encode_message(message))
