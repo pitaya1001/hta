@@ -1,4 +1,5 @@
 import bisect
+from .bitstream import *
 
 english_character_frequencies = [ # 16x16
     0,    0,    0,    0,    0,    0,   0,    0,    0,    0, 722,   0,    0,    2,    0,    0,
@@ -29,10 +30,15 @@ class HuffmanNode:
 
 class HuffmanTree:
     def __init__(self, frequency_table):
+        assert(len(frequency_table) == 256)
+        
         # sort table
+        leaf_nodes = [None] * 256 # used to generate the encoding table
         sorted_nodes = []
         for i, frequency in enumerate(frequency_table):
-            bisect.insort_left(sorted_nodes, HuffmanNode(value=i, weight=max(1, frequency)), key=lambda e:e.weight)
+            node = HuffmanNode(value=i, weight=max(1, frequency))
+            leaf_nodes[i] = node
+            bisect.insort_left(sorted_nodes, node, key=lambda e: e.weight)
         
         # generate binary tree
         while True:
@@ -48,7 +54,21 @@ class HuffmanTree:
             # insertion sort
             bisect.insort_left(sorted_nodes, node, key=lambda e:e.weight)
         
-        # TODO: generate encoding table
-        self.encoding_table = None
+        # generate encoding table
+        self.encoding_table = [None] * 256
+        path = bytearray(256)
+        for i, node in enumerate(leaf_nodes):
+            # calculate sequence
+            path_length = 0
+            while node != self.root_node:
+                path[path_length] = int(node.parent.left != node)
+                path_length += 1
+                node = node.parent
+            
+            # write sequence in reverse order
+            bs = Bitstream(capacity=path_length)
+            for j in range(path_length-1, 0-1, -1):
+                bs.write_bit(path[j] == 1)
+            self.encoding_table[i] = bs
 
 default_huffman_tree = HuffmanTree(english_character_frequencies)

@@ -434,14 +434,10 @@ class Bitstream:
         self.write_bits(buffer, TO_BITS(size))
 
     def write_huffman_buffer(self, buffer, encoding_table):
-        bit_count = 0
-        for byte in buffer:
-            bit_count += encoding_table[byte][1]
-        
+        bit_count = sum(encoding_table[byte].len for byte in buffer)
         self.write_compressed_u16(bit_count)
-        
         for byte in buffer:
-            self.write_bits(encoding_table[byte][0], encoding_table[byte][1])
+            self.write_bits(encoding_table[byte].data, encoding_table[byte].len)
     
     def write_vec2(self, v):
         self.write_float(v.x)
