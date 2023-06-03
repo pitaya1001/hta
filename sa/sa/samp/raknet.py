@@ -159,7 +159,7 @@ def get_time():
     return int(timestamp.value * 1000 / perf_frequency.value)
 
 class InternalPacket:
-    def __init__(self, sequence_number=None, reliability=None, ordering_channel=None, ordering_index=None, split_id=None, split_index=None, split_count=None, payload=None, time=None):
+    def __init__(self, sequence_number, reliability, ordering_channel, ordering_index, split_id=None, split_index=None, split_count=None, payload=b''):
         self.sequence_number = sequence_number
         self.reliability = reliability
         self.ordering_channel = ordering_channel
@@ -168,7 +168,6 @@ class InternalPacket:
         self.split_index = split_index
         self.split_count = split_count
         self.payload = payload
-        self.time = time
     
     def __str__(self):
         return f'<InternalPacket #{self.sequence_number} {self.reliability.name} ordering_channel={self.ordering_channel} ordering_index={self.ordering_index} split_id={self.split_id} split_index={self.split_index} split_count={self.split_count} payload={self.payload.hex(" ")}>'
