@@ -1,11 +1,10 @@
 import enum
+import struct
 
 from .raknet import *
 from sa.weapon import WEAPON
 from sa.skin import SKIN
 from sa.vehicle import VEHICLE
-
-import struct
 
 class DriverSync(Message):
     def __init__(self, driver_id, vehicle_id, lr_keys, ud_keys, keys, dir, pos, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, additional_key, siren, landing_gear, trailer_id, extra):
