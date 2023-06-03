@@ -10,7 +10,7 @@ def on_message(message, internal_packet, peer, server):
     
 async def main():
     s = samp.Server(('127.0.0.1', 7777))
-    s.pre_connected_message_callbacks.append(on_message)
+    s.message_callbacks.append(on_message)
     s.fake_player_list = {'alice':123, 'zebra': 456}
     await s.start()
     

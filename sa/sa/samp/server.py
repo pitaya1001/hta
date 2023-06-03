@@ -66,10 +66,8 @@ class Server:
         
         # callbacks
         self.bad_rcon_password_callbacks = []
-        #self.unconnected_message_callbacks = []
         
-        self.pre_connected_message_callbacks = [] # callback(message, internal_packet, peer, server)
-        self.post_connected_message_callbacks = [] # callback(message, internal_packet, peer, server)
+        self.message_callbacks = [] # callback(message, internal_packet, peer, server)
         
         self.cached_info_query_payload = None
         self.cached_rules_query_payload = None
@@ -409,7 +407,7 @@ class Server:
         peer.push_message(rpc)
     
     def on_connected_message(self, message, internal_packet, peer):
-        for callback in self.pre_connected_message_callbacks:
+        for callback in self.message_callbacks:
             if callback(message, internal_packet, peer, self) == True:
                 return
     
@@ -455,8 +453,4 @@ class Server:
                 peer.push_message(msg, RELIABILITY.RELIABLE, PRIORITY.SYSTEM)
         elif message.id == MSG.CONNECTED_PONG:
             peer.player.ping = int((self.last_logic_t - self.last_ping_t) * 1000)
-        
-        for callback in self.post_connected_message_callbacks:
-            if callback(message, internal_packet, peer, self) == True:
-                return
     

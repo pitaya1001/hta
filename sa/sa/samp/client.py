@@ -35,6 +35,8 @@ class Client(Player):
         self.server_peer.connected_message_callbacks.append(self.on_connected_message)
         self.server_peer.unconnected_message_callbacks.append(self.on_unconnected_message)
         
+        self.message_callbacks = [] # callback(message, internal_packet, peer, client)
+        
         self.connected = False
         self.state = CLIENT_STATE.UNCONNECTED
         
@@ -84,6 +86,10 @@ class Client(Player):
 
     def on_connected_message(self, message, internal_packet, peer):
         #print('Client.on_connected_message', message, peer)
+        for callback in self.message_callbacks:
+            if callback(message, internal_packet, peer, self) == True:
+                break
+        
         if message.id == MSG.CONNECTION_REQUEST_ACCEPTED:
             self.id = message.player_id # save the id the server assigned to us
             peer.push_message(ClientJoin(CLIENT_VERSION_37, 1, self.name, (message.cookie ^ CLIENT_VERSION_37), self.gpci, self.version))
