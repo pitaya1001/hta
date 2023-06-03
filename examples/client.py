@@ -8,7 +8,7 @@ def on_message(message, internal_packet, peer):
         print(rpc)
 
 async def main():
-    c = samp.Client(('127.0.0.1', 7778))
+    c = samp.Client(('127.0.0.1', 7777))
     c.server_peer.connected_message_callbacks.append(on_message)
     await c.start()
     while True:

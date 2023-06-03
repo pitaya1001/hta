@@ -5,13 +5,15 @@ from sa.samp import MSG, RPC
 def on_message(message, internal_packet, peer, server):
     if message.id == MSG.RPC:
         rpc = message
-        if rpc.rpc_id == RPC.CLICK_SCOREBOARD_PLAYER:
-            peer.push_message(samp.ShowGameText(0, 5000, f'You clicked on id {rpc.player_id}'))
+        if rpc.rpc_id == RPC.CLIENT_JOIN:
+            peer.push_message(samp.ChatMessage('Welcome survivor!', 0x1aab84ff))
     
 async def main():
     s = samp.Server(('127.0.0.1', 7777))
-    s.pre_connected_message_callbacks.append(on_message)
-    s.fake_player_list = {'alice':123, 'zebra': 456}
+    s.hostname = 'Zombie Apocalypse'
+    s.gamemode = 'Survival'
+    s.language = 'Brain'
+    s.post_connected_message_callbacks.append(on_message)
     await s.start()
     
     while True:
