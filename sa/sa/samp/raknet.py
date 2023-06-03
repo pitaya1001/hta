@@ -233,7 +233,7 @@ class InternalPacket:
         payload = bytearray(payload_size)
         bs.read_aligned(payload, payload_size)
         
-        return InternalPacket(number, reliability, ordering_channel, ordering_index, split_id, split_index, split_count, payload)
+        return InternalPacket(sequence_number, reliability, ordering_channel, ordering_index, split_id, split_index, split_count, payload)
 
 class Message:
     def __init__(self, id):
