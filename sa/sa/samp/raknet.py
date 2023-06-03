@@ -265,7 +265,7 @@ class Message:
             else:
                 return id, data[1:]
         except Exception as e:
-            e.add_note('data:' + data.hex(' '))
+            e.add_note(f'id=0x{id:x} data={data.hex(" ")}')
             raise e
     
     # in case they are the same
@@ -285,7 +285,7 @@ class Message:
         try:
             return id.decode_client_payload(data)
         except Exception as e:
-            e.add_note(f'data: {data.hex(" ")}')
+            e.add_note(f'id=0x{id:x} data=[{data.hex(" ")}]')
             raise e
 
     @staticmethod
@@ -294,7 +294,7 @@ class Message:
         try:
             return id.decode_server_payload(data)
         except Exception as e:
-            e.add_note(f'id={id}; data: {data.hex(" ")}')
+            e.add_note(f'id=0x{id:x}; data=[{data.hex(" ")}]')
             raise e
 
 class Rpc(Message):
