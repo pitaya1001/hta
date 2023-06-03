@@ -307,10 +307,17 @@ class Bitstream:
 
     # WRITE METHODS
     
+    # n: size of bit sequence to be written
+    def check_resize(self, n):
+        if n + self.len > TO_BITS(len(self.data)): # resize buffer
+            os=len(self.data)
+            self.data = self.data + bytearray(max(TO_BYTES(n*2), len(self.data)))
+    
     def update_len(self):
         self.len = self.write_offset if (self.write_offset > self.len) else self.len
 
     def write_bit(self, bit):
+        self.check_resize(1)
         if bit == 1: # set bit
             self.data[self.write_offset // 8] |= 1 << (7 - (self.write_offset % 8))
         else: # clear bit
@@ -322,6 +329,7 @@ class Bitstream:
         self.write_bit(bool)
     
     def write_bits(self, i, n, io = 0):
+        self.check_resize(n)
         copy_bits(i, self.data, n, io, self.write_offset)
         self.write_offset += n
         self.update_len()
@@ -331,6 +339,7 @@ class Bitstream:
             self.write_bit(int(not not (num & (1 << (n - 1 - i)))))
     
     def write_aligned(self, buffer):
+        self.check_resize(len(buffer))
         self.align_write_to_byte_boundary()
         for i in range(len(buffer)):
             self.data[self.write_offset // 8 + i] = buffer[i]
