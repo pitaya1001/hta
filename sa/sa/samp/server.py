@@ -349,7 +349,7 @@ class Server:
         # check addr
         try: # packet from connected peer
             peer = self.peers[addr]
-            peer.handle_packet(data)
+            peer.handle_connected_packet(data)
         except KeyError: # packet from unconnected peer
             # check if server is full
             if len(self.peers) >= self.max_player_count:

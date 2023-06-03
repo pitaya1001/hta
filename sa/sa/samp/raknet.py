@@ -859,19 +859,17 @@ class Peer:
             self.sendto(buffer)
             self.out_bs.reset()
     
-    def handle_packet(self, data):
-        #self.last_packet_time = time
-        
+    def handle_unconnected_packet(self, data):
         # if this peer is not connected, a message is present at the
         # start of the packet, instead of acks or internal packet headers
-        if not self.connected:
-            try:
-                message = self.decode_message(data)
-            except Exception as e:
-                e.add_note(f'Peer.handle_packet(data={data.hex(" ")})')
-                raise e
-            self.handle_unconnected_message(message)
-            return
+        try:
+            message = self.decode_message(data)
+        except Exception as e:
+            e.add_note(f'Peer.handle_packet(data={data.hex(" ")})')
+            raise e
+        self.handle_unconnected_message(message)
+    
+    def handle_connected_packet(self, data):
         bs = Bitstream(data)
         try:
             '''
@@ -891,7 +889,6 @@ class Peer:
             # do not decode leftover bits(<16; not necessarily a bad packet)
             while bs.unread_bits_count() > 16:
                 packet = InternalPacket.decode(bs)
-                
                 # if we didn't have GIl I guess I'd be beneficial to push the packet
                 # into a queue and process it on another thread potentially in
                 # parallel; but because we use asyncio I guess I won't matter if we
@@ -993,6 +990,12 @@ class Peer:
             e.add_note(f'Peer.handle_packet(data={data.hex(" ")})')
             #raise e
             log(traceback.format_exc())
+
+    def handle_packet(self, data):
+        if self.connected:
+            self.handle_connected_packet(data)
+        else:
+            self.handle_unconnected_packet(data)
 
     def handle_unconnected_message(self, message):
         #print('s',message)
