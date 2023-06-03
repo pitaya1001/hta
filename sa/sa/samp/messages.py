@@ -71,8 +71,6 @@ class DriverSync(Message):
     
     @staticmethod
     def decode_client_payload(data):
-        driver_id = vehicle_id = lr_keys = ud_keys = keys = dir = pos = velocity = vehicle_health = driver_health = driver_armor = driver_weapon_id = additional_key = siren = landing_gear = hydra_thrust_angle = trailer_id = None
-    
         bs = Bitstream(data)
         vehicle_id = bs.read_u16()
         lr_keys = bs.read_u16()
