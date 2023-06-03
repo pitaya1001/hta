@@ -2133,6 +2133,7 @@ class RequestSpawn(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return RequestSpawn()
+RPC.REQUEST_SPAWN.decode_client_rpc_payload = RequestSpawn.decode_rpc_payload
 
 class REQUEST_SPAWN(enum.IntEnum):
     REJECT = 0
@@ -2142,13 +2143,7 @@ class REQUEST_SPAWN(enum.IntEnum):
 class RequestSpawnResponse(Rpc):
     def __init__(self, response):
         super().__init__(RPC.REQUEST_SPAWN_RESPONSE)
-        self.response = response
-
-    #def __str__(self):
-    #    return f'<RequestSpawnResponse response={self.response}>'
-
-    def __len__(self):
-        return TO_BITS(1)
+        self.response = REQUEST_SPAWN(response)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.response)
@@ -2157,6 +2152,7 @@ class RequestSpawnResponse(Rpc):
     def decode_rpc_payload(bs):
         response = bs.read_u8()
         return RequestSpawnResponse(response)
+RPC.REQUEST_SPAWN_RESPONSE.decode_server_rpc_payload = RequestSpawnResponse.decode_rpc_payload
 
 class REJECT_REASON(enum.IntEnum):
     BAD_VERSION  = 1
