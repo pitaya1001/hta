@@ -238,7 +238,6 @@ class InternalPacket:
 class Message:
     def __init__(self, id):
         self.id = id
-        self.data = None
     
     def __str__(self):
         return f'<Message>'
