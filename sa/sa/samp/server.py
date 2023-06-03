@@ -127,10 +127,10 @@ class Server:
         except: log(traceback.format_exc())
     
     def cache_scores_and_pings(self):
-        players = [None] * len(self.peers)
-        for i, (_, peer) in enumerate(self.peers.items()):
+        players = []
+        for peer in self.peers.values():
             player = peer.player
-            players[i] = [player.id, player.score, player.ping]
+            players.append((player.id, player.score, player.ping))
         self.cached_scores_and_pings = RequestScoresAndPingsResponse(players).encode()
     
     async def cache_scores_and_pings_loop(self):
@@ -448,5 +448,7 @@ class Server:
                 msg = ConnectionRequestAccepted(ip=peer.addr[0], port=peer.addr[1], player_id=player.id, cookie=self.token)
                 peer.push_message(msg, RELIABILITY.RELIABLE, PRIORITY.SYSTEM)
         elif message.id == MSG.CONNECTED_PONG:
-            peer.player.ping = int((self.last_logic_t - self.last_ping_t) * 1000)
+            ping = int((time.time() - self.last_ping_t) * 1000)
+            if ping >= peer.player.ping:
+                peer.player.ping = ping
     
