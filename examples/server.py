@@ -50,13 +50,13 @@ def on_message(message, internal_packet, peer, server):
                     peer.push_message(Show3DTextLabel(100+i, f'Bot Rhino {i}', 0xdddd00dd, Vec3(0,0,0),draw_distance=100, test_los=False, attached_vehicle_id=100+i))
             else:
                 peer.push_message(ChatMessage('Invalid command', color=0xdd0000ff))
-    
+
 async def main():
     s = Server(('127.0.0.1', 7777))
     s.message_callbacks.append(on_message)
     s.fake_player_list = {'alice':123, 'zebra': 456}
     await s.start()
-    
+
     while True:
         await asyncio.sleep(0.01)
         s.update()
