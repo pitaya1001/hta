@@ -265,6 +265,17 @@ class Bitstream:
         buffer = bytearray(size)
         self.read_bits(buffer, TO_BITS(size))
         return buffer
+    
+    def read_huffman_buffer(self, root_node):
+        output = bytearray()
+        node = root_node
+        bit_count = self.read_compressed_u16()
+        for _ in range(bit_count):
+            node = node.left if (self.read_bit() == 0) else node.right
+            if node.left == None and node.right == None:
+                output += bytearray([node.value])
+                node = root_node
+        return output
 
     def read_vec2(self):
         x = self.read_float()
