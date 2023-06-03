@@ -1,4 +1,5 @@
 import enum
+
 from .bitstream import *
 from .common import *
 from .huffman_encoding import default_huffman_tree
@@ -159,8 +160,6 @@ class RPC(enum.IntEnum):
     SET_ACTOR_FACING_ANGLE      = 175 # SetActorFacingAngle
     SET_ACTOR_POS               = 176 # SetActorPos
     SET_ACTOR_HEALTH            = 178 # SetActorHealth
-    BEGIN = SET_PLAYER_NAME
-    END = SET_ACTOR_HEALTH
 
 from . import raknet
 raknet.RPC = RPC
@@ -170,31 +169,17 @@ class SetPlayerName(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_NAME)
 
-    def __str__(self):
-        return f'<SetPlayerName>'
-
-    def __len__(self):
-        return 0
-
     def encode_rpc_payload(self, bs):
         pass
 
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerName()
-RPC.SET_PLAYER_NAME.decode_rpc_payload = SetPlayerName.decode_rpc_payload
-
 
 class SetPlayerPos(Rpc):
     def __init__(self, pos):
         super().__init__(RPC.SET_PLAYER_POS)
         self.pos = pos
-
-    def __str__(self):
-        return f'<SetPlayerPos {self.pos}>'
-
-    def __len__(self):
-        return TO_BITS(12)
 
     def encode_rpc_payload(self, bs):
         bs.write_vec3(self.pos)
@@ -203,18 +188,10 @@ class SetPlayerPos(Rpc):
     def decode_rpc_payload(bs):
         pos = bs.read_vec3()
         return SetPlayerPos(pos)
-RPC.SET_PLAYER_POS.decode_rpc_payload = SetPlayerPos.decode_rpc_payload
-
 
 class SetPlayerPosFindZ(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_POS_FIND_Z)
-
-    def __str__(self):
-        return f'<SetPlayerPosFindZ>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -222,19 +199,11 @@ class SetPlayerPosFindZ(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerPosFindZ()
-RPC.SET_PLAYER_POS_FIND_Z.decode_rpc_payload = SetPlayerPosFindZ.decode_rpc_payload
-
 
 class SetPlayerHealth(Rpc):
     def __init__(self, health):
         super().__init__(RPC.SET_PLAYER_HEALTH)
         self.health = health
-
-    def __str__(self):
-        return f'<SetPlayerHealth health={self.health:.02f}>'
-
-    def __len__(self):
-        return TO_BITS(4)
 
     def encode_rpc_payload(self, bs):
         bs.write_float(self.health)
@@ -243,19 +212,11 @@ class SetPlayerHealth(Rpc):
     def decode_rpc_payload(bs):
         health = bs.read_float()
         return SetPlayerHealth(health)
-RPC.SET_PLAYER_HEALTH.decode_rpc_payload = SetPlayerHealth.decode_rpc_payload
-
 
 class TogglePlayerControllable(Rpc):
     def __init__(self, movable):
         super().__init__(RPC.TOGGLE_PLAYER_CONTROLLABLE)
         self.movable = movable
-
-    def __str__(self):
-        return f'<TogglePlayerControllable movable={self.movable}>'
-
-    def __len__(self):
-        return TO_BITS(1)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.movable)
@@ -264,18 +225,10 @@ class TogglePlayerControllable(Rpc):
     def decode_rpc_payload(bs):
         movable = bs.read_u8()
         return TogglePlayerControllable(movable)
-RPC.TOGGLE_PLAYER_CONTROLLABLE.decode_rpc_payload = TogglePlayerControllable.decode_rpc_payload
-
 
 class PlaySound(Rpc):
     def __init__(self):
         super().__init__(RPC.PLAY_SOUND)
-
-    def __str__(self):
-        return f'<PlaySound>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -283,8 +236,6 @@ class PlaySound(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return PlaySound()
-RPC.PLAY_SOUND.decode_rpc_payload = PlaySound.decode_rpc_payload
-
 
 class SetWorldBounds(Rpc):
     def __init__(self, min_x, max_x, min_y, max_y):
@@ -293,12 +244,6 @@ class SetWorldBounds(Rpc):
         self.max_x = max_x
         self.min_y = min_y
         self.max_y = max_y
-
-    def __str__(self):
-        return f'<SetWorldBounds x=[{self.min_x:.02f}, {self.max_x:.02f}] y=[{self.min_y:.02f}, {self.max_y:.02f}]>'
-
-    def __len__(self):
-        return TO_BITS(16)
 
     def encode_rpc_payload(self, bs):
         bs.write_float(self.max_x)
@@ -313,19 +258,11 @@ class SetWorldBounds(Rpc):
         max_y = bs.read_float()
         min_y = bs.read_float()
         return SetWorldBounds(min_x, max_x, min_y, max_y)
-RPC.SET_WORLD_BOUNDS.decode_rpc_payload = SetWorldBounds.decode_rpc_payload
-
 
 class GivePlayerMoney(Rpc):
     def __init__(self, money):
         super().__init__(RPC.GIVE_PLAYER_MONEY)
         self.money = money
-
-    def __str__(self):
-        return f'<GivePlayerMoney money={self.money}>'
-
-    def __len__(self):
-        return TO_BITS(4)
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.money)
@@ -334,19 +271,11 @@ class GivePlayerMoney(Rpc):
     def decode_rpc_payload(bs):
         money = bs.read_u32()
         return GivePlayerMoney(money)
-RPC.GIVE_PLAYER_MONEY.decode_rpc_payload = GivePlayerMoney.decode_rpc_payload
-
 
 class SetPlayerFacingAngle(Rpc):
     def __init__(self, angle):
         super().__init__(RPC.SET_PLAYER_FACING_ANGLE)
         self.angle = angle
-
-    def __str__(self):
-        return f'<SetPlayerFacingAngle angle={self.angle:.02f}>'
-
-    def __len__(self):
-        return TO_BITS(4)
 
     def encode_rpc_payload(self, bs):
         bs.write_float(angle)
@@ -355,18 +284,10 @@ class SetPlayerFacingAngle(Rpc):
     def decode_rpc_payload(bs):
         angle = bs.read_float()
         return SetPlayerFacingAngle(angle)
-RPC.SET_PLAYER_FACING_ANGLE.decode_rpc_payload = SetPlayerFacingAngle.decode_rpc_payload
-
 
 class ResetPlayerMoney(Rpc):
     def __init__(self):
         super().__init__(RPC.RESET_PLAYER_MONEY)
-
-    def __str__(self):
-        return f'<ResetPlayerMoney>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -374,18 +295,10 @@ class ResetPlayerMoney(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ResetPlayerMoney()
-RPC.RESET_PLAYER_MONEY.decode_rpc_payload = ResetPlayerMoney.decode_rpc_payload
-
 
 class ResetPlayerWeapons(Rpc):
     def __init__(self):
         super().__init__(RPC.RESET_PLAYER_WEAPONS)
-
-    def __str__(self):
-        return f'<ResetPlayerWeapons>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -393,18 +306,10 @@ class ResetPlayerWeapons(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ResetPlayerWeapons()
-RPC.RESET_PLAYER_WEAPONS.decode_rpc_payload = ResetPlayerWeapons.decode_rpc_payload
-
 
 class GivePlayerWeapon(Rpc):
     def __init__(self):
         super().__init__(RPC.GIVE_PLAYER_WEAPON)
-
-    def __str__(self):
-        return f'<GivePlayerWeapon>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -412,20 +317,12 @@ class GivePlayerWeapon(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return GivePlayerWeapon()
-RPC.GIVE_PLAYER_WEAPON.decode_rpc_payload = GivePlayerWeapon.decode_rpc_payload
-
 
 class ClickScoreboardPlayer(Rpc):
     def __init__(self, player_id, source):
         super().__init__(RPC.CLICK_SCOREBOARD_PLAYER)
         self.player_id = player_id
         self.source = source
-
-    def __str__(self):
-        return f'<ClickScoreboardPlayer player_id={self.player_id} source={self.source}>'
-
-    def __len__(self):
-        return TO_BITS(3)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -436,7 +333,6 @@ class ClickScoreboardPlayer(Rpc):
         player_id = bs.read_u16()
         source = bs.read_u8()
         return ClickScoreboardPlayer(player_id, source)
-RPC.CLICK_SCOREBOARD_PLAYER.decode_rpc_payload = ClickScoreboardPlayer.decode_rpc_payload
 
 class SetVehicleParamsEx(Rpc):
     def __init__(self, vehicle_id, engine, lights=255, alarm=255, doors=255, bonnet=255, boot=255, objective=255, siren=255, door_driver=255, door_passenger=255, door_back_left=255, door_back_right=255, window_driver=255, window_passenger=255, window_back_left=255, window_back_right=255):
@@ -458,12 +354,6 @@ class SetVehicleParamsEx(Rpc):
         self.window_passenger = window_passenger
         self.window_back_left = window_back_left
         self.window_back_right = window_back_right
-
-    def __str__(self):
-        return f'<SetVehicleParamsEx vehicle_id={self.vehicle_id} engine={self.engine} lights={self.lights} alarm={self.alarm} doors={self.doors} bonnet={self.bonnet} boot={self.boot} objective={self.objective} siren={self.siren} door_driver={self.door_driver} door_passenger={self.door_passenger} door_back_left={self.door_back_left} door_back_right={self.door_back_right} window_driver={self.window_driver} window_passenger={self.window_passenger} window_back_left={self.window_back_left} window_back_right={self.window_back_right}>'
-
-    def __len__(self):
-        return TO_BITS(18)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -504,8 +394,6 @@ class SetVehicleParamsEx(Rpc):
         window_back_left = bs.read_u8()
         window_back_right = bs.read_u8()
         return SetVehicleParamsEx(vehicle_id, engine, lights, alarm, doors, bonnet, boot, objective, siren, door_driver, door_passenger, door_back_left, door_back_right, window_driver, window_passenger, window_back_left, window_back_right)
-RPC.SET_VEHICLE_PARAMS_EX.decode_rpc_payload = SetVehicleParamsEx.decode_rpc_payload
-
 
 class ClientJoin(Rpc):
     def __init__(self, version_code, mod, name, challenge_response, gpci, version):
@@ -516,12 +404,6 @@ class ClientJoin(Rpc):
         self.challenge_response = challenge_response
         self.gpci = gpci # "gpci"; (stands for get player client id)
         self.version = version
-
-    def __str__(self):
-        return f"<ClientJoin version_code={self.version_code} mod={self.mod} name='{self.name}' challenge_response={self.challenge_response:x} gpci='{self.gpci}' version='{self.version}'>"
-
-    def __len__(self):
-        return TO_BITS(4 + 1 + 1 + len(self.name.encode(SAMP_ENCODING)) + 4 + 1 + len(self.gpci) + 1 + len(self.version.encode(SAMP_ENCODING)))
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.version_code)
@@ -540,8 +422,6 @@ class ClientJoin(Rpc):
         gpci = bs.read_dynamic_buffer_u8().decode()
         version = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return ClientJoin(version_code, mod, name, challenge_response, gpci, version)
-RPC.CLIENT_JOIN.decode_rpc_payload = ClientJoin.decode_rpc_payload
-
 
 ''' S2C
 Server sends when a player enters a vehicle
@@ -556,12 +436,6 @@ class PlayerEnterVehicle(Rpc):
         self.vehicle_id = vehicle_id
         self.as_passenger = as_passenger
 
-    def __str__(self):
-        return f'<PlayerEnterVehicle player_id={self.player_id} vehicle_id={self.vehicle_id} as_passenger={self.as_passenger}>'
-
-    def __len__(self):
-        return TO_BITS(5)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
         bs.write_u16(self.vehicle_id)
@@ -573,8 +447,6 @@ class PlayerEnterVehicle(Rpc):
         vehicle_id = bs.read_u16()
         as_passenger = bs.read_u8()
         return PlayerEnterVehicle(player_id, vehicle_id, as_passenger)
-RPC.PLAYER_ENTER_VEHICLE.decode_server_rpc_payload = PlayerEnterVehicle.decode_rpc_payload
-
 
 ''' C2S
 Client sends when it enters a vehicle
@@ -587,12 +459,6 @@ class EnterVehicle(Rpc):
         self.vehicle_id = vehicle_id
         self.as_passenger = as_passenger
 
-    def __str__(self):
-        return f'<EnterVehicle vehicle_id={self.vehicle_id} as_passenger={self.as_passenger}>'
-
-    def __len__(self):
-        return TO_BITS(3)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
         bs.write_u8(self.as_passenger)
@@ -602,18 +468,10 @@ class EnterVehicle(Rpc):
         vehicle_id = bs.read_u16()
         as_passenger = bs.read_u8()
         return EnterVehicle(vehicle_id, as_passenger)
-RPC.PLAYER_ENTER_VEHICLE.decode_client_rpc_payload = EnterVehicle.decode_rpc_payload
-
 
 class EnterEditObject(Rpc):
     def __init__(self):
         super().__init__(RPC.ENTER_EDIT_OBJECT)
-
-    def __str__(self):
-        return f'<EnterEditObject>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -621,18 +479,10 @@ class EnterEditObject(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return EnterEditObject()
-RPC.ENTER_EDIT_OBJECT.decode_rpc_payload = EnterEditObject.decode_rpc_payload
-
 
 class CancelEditObject(Rpc):
     def __init__(self):
         super().__init__(RPC.CANCEL_EDIT_OBJECT)
-
-    def __str__(self):
-        return f'<CancelEditObject>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -640,20 +490,12 @@ class CancelEditObject(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return CancelEditObject()
-RPC.CANCEL_EDIT_OBJECT.decode_rpc_payload = CancelEditObject.decode_rpc_payload
-
 
 class SetPlayerTime(Rpc):
     def __init__(self, hour, minute):
         super().__init__(RPC.SET_PLAYER_TIME)
         self.hour = hour
         self.minute = minute
-
-    def __str__(self):
-        return f'<SetPlayerTime {self.hour:02}:{self.minute:02}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.hour)
@@ -664,18 +506,10 @@ class SetPlayerTime(Rpc):
         hour = bs.read_u8()
         minute = bs.read_u8()
         return SetPlayerTime(hour, minute)
-RPC.SET_PLAYER_TIME.decode_rpc_payload = SetPlayerTime.decode_rpc_payload
-
 
 class ToggleClock(Rpc):
     def __init__(self):
         super().__init__(RPC.TOGGLE_CLOCK)
-
-    def __str__(self):
-        return f'<ToggleClock>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -683,8 +517,6 @@ class ToggleClock(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ToggleClock()
-RPC.TOGGLE_CLOCK.decode_rpc_payload = ToggleClock.decode_rpc_payload
-
 
 class WorldPlayerAdd(Rpc):
     def __init__(self, player_id, team, skin_id, pos, facing_angle, color, fighting_style, skill_level):
@@ -697,12 +529,6 @@ class WorldPlayerAdd(Rpc):
         self.color = color
         self.fighting_style = fighting_style
         self.skill_level = skill_level
-
-    def __str__(self):
-        return f'<WorldPlayerAdd player_id={self.player_id} team={self.team} skin_id={self.skin_id.name}({self.skin_id.value}) pos={self.pos} facing_angle={self.facing_angle:.02f} color={self.color:08x} fighting_style={self.fighting_style} skill_level={self.skill_level}>'
-
-    def __len__(self):
-        return TO_BITS(30)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -725,18 +551,10 @@ class WorldPlayerAdd(Rpc):
         fighting_style = bs.read_u8()
         skill_level = bs.read_u16()
         return WorldPlayerAdd(player_id, team, skin_id, pos, facing_angle, color, fighting_style, skill_level)
-RPC.WORLD_PLAYER_ADD.decode_rpc_payload = WorldPlayerAdd.decode_rpc_payload
-
 
 class SetShopName(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_SHOP_NAME)
-
-    def __str__(self):
-        return f'<SetShopName>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -744,18 +562,10 @@ class SetShopName(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetShopName()
-RPC.SET_SHOP_NAME.decode_rpc_payload = SetShopName.decode_rpc_payload
-
 
 class SetSkillLevel(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_SKILL_LEVEL)
-
-    def __str__(self):
-        return f'<SetSkillLevel>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -763,18 +573,10 @@ class SetSkillLevel(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetSkillLevel()
-RPC.SET_SKILL_LEVEL.decode_rpc_payload = SetSkillLevel.decode_rpc_payload
-
 
 class SetPlayerDrunkLevel(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_DRUNK_LEVEL)
-
-    def __str__(self):
-        return f'<SetPlayerDrunkLevel>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -782,8 +584,6 @@ class SetPlayerDrunkLevel(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerDrunkLevel()
-RPC.SET_PLAYER_DRUNK_LEVEL.decode_rpc_payload = SetPlayerDrunkLevel.decode_rpc_payload
-
 
 class Create3DTextLabel(Rpc):
     def __init__(self, label_id, color, pos, draw_distance, test_los, attached_player_id, attached_vehicle_id, text):
@@ -796,12 +596,6 @@ class Create3DTextLabel(Rpc):
         self.attached_player_id = attached_player_id
         self.attached_vehicle_id = attached_vehicle_id
         self.text = text
-
-    def __str__(self):
-        return f'<Create3DTextLabel label_id={self.label_id} color={self.color:08x} pos={self.pos} draw_distance={self.draw_distance:.02f} test_los={self.test_los} attached_player_id={self.attached_player_id} attached_vehicle_id={self.attached_vehicle_id} text={repr(self.text)}>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -817,18 +611,10 @@ class Create3DTextLabel(Rpc):
         attached_vehicle_id = bs.read_u16()
         text = bs.read_huffman_buffer(default_huffman_tree.root_node).decode(SAMP_ENCODING)
         return Create3DTextLabel(label_id, color, pos, draw_distance, test_los, attached_player_id, attached_vehicle_id, text)
-RPC.CREATE_3D_TEXT_LABEL.decode_rpc_payload = Create3DTextLabel.decode_rpc_payload
-
 
 class DisableCheckpoint(Rpc):
     def __init__(self):
         super().__init__(RPC.DISABLE_CHECKPOINT)
-
-    def __str__(self):
-        return f'<DisableCheckpoint>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -836,18 +622,10 @@ class DisableCheckpoint(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return DisableCheckpoint()
-RPC.DISABLE_CHECKPOINT.decode_rpc_payload = DisableCheckpoint.decode_rpc_payload
-
 
 class SetRaceCheckpoint(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_RACE_CHECKPOINT)
-
-    def __str__(self):
-        return f'<SetRaceCheckpoint>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -855,18 +633,10 @@ class SetRaceCheckpoint(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetRaceCheckpoint()
-RPC.SET_RACE_CHECKPOINT.decode_rpc_payload = SetRaceCheckpoint.decode_rpc_payload
-
 
 class DisableRaceCheckpoint(Rpc):
     def __init__(self):
         super().__init__(RPC.DISABLE_RACE_CHECKPOINT)
-
-    def __str__(self):
-        return f'<DisableRaceCheckpoint>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -874,18 +644,10 @@ class DisableRaceCheckpoint(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return DisableRaceCheckpoint()
-RPC.DISABLE_RACE_CHECKPOINT.decode_rpc_payload = DisableRaceCheckpoint.decode_rpc_payload
-
 
 class GameModeRestart(Rpc):
     def __init__(self):
         super().__init__(RPC.GAME_MODE_RESTART)
-
-    def __str__(self):
-        return f'<GameModeRestart>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -893,8 +655,6 @@ class GameModeRestart(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return GameModeRestart()
-RPC.GAME_MODE_RESTART.decode_rpc_payload = GameModeRestart.decode_rpc_payload
-
 
 class RpcPlayAudioStream(Rpc):
     def __init__(self, url, pos, radius, use_pos):
@@ -903,12 +663,6 @@ class RpcPlayAudioStream(Rpc):
         self.pos = pos
         self.radius = float(radius)
         self.use_pos = use_pos
-
-    def __str__(self):
-        return f"<RpcPlayAudioStream url='{self.url}' pos={self.pos} radius={self.radius:.02f} use_pos={self.use_pos}>"
-
-    def __len__(self):
-        return TO_BITS(1 + len(self.url.encode(SAMP_ENCODING)) + 12 + 4 + 1)
 
     def encode_rpc_payload(self, bs):
         bs.write_dynamic_buffer_u8(self.url.encode(SAMP_ENCODING))
@@ -923,18 +677,10 @@ class RpcPlayAudioStream(Rpc):
         radius = bs.read_float()
         use_pos = bs.read_u8()
         return RpcPlayAudioStream(url, pos, radius, use_pos)
-RPC.PLAY_AUDIO_STREAM.decode_rpc_payload = RpcPlayAudioStream.decode_rpc_payload
-
 
 class StopAudioStream(Rpc):
     def __init__(self):
         super().__init__(RPC.STOP_AUDIO_STREAM)
-
-    def __str__(self):
-        return f'<StopAudioStream>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -942,18 +688,10 @@ class StopAudioStream(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return StopAudioStream()
-RPC.STOP_AUDIO_STREAM.decode_rpc_payload = StopAudioStream.decode_rpc_payload
-
 
 class RemoveBuilding(Rpc):
     def __init__(self):
         super().__init__(RPC.REMOVE_BUILDING)
-
-    def __str__(self):
-        return f'<RemoveBuilding>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -961,8 +699,6 @@ class RemoveBuilding(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return RemoveBuilding()
-RPC.REMOVE_BUILDING.decode_rpc_payload = RemoveBuilding.decode_rpc_payload
-
 
 class RemoveBuilding(Rpc):
     def __init__(self, object_model, pos, radius):
@@ -970,12 +706,6 @@ class RemoveBuilding(Rpc):
         self.object_model = object_model
         self.pos = pos
         self.radius = float(radius)
-
-    def __str__(self):
-        return f'<RemoveBuilding model={self.object_model} pos={self.pos} radius={self.radius:.02f}>'
-
-    def __len__(self):
-        return TO_BITS(20)
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.object_model)
@@ -988,8 +718,6 @@ class RemoveBuilding(Rpc):
         pos = bs.read_vec3()
         radius = bs.read_float()
         return RemoveBuilding(object_model, pos, radius)
-RPC.REMOVE_BUILDING.decode_rpc_payload = RemoveBuilding.decode_rpc_payload
-
 
 class CreateObject(Rpc):
     def __init__(self, object_id, model_id, pos, dir, draw_distance, no_camera_col, attached_object=INVALID_ID, attached_vehicle=INVALID_ID, attach_offset=None, attach_dir=None, sync_rotation=None):
@@ -1005,12 +733,6 @@ class CreateObject(Rpc):
         self.attach_offset = attach_offset
         self.attach_dir = attach_dir
         self.sync_rotation = sync_rotation
-
-    def __str__(self):
-        return f'<CreateObject object_id={self.object_id} model_id={self.model_id} pos={self.pos} dir={self.dir} draw_distance={self.draw_distance} no_camera_col={self.no_camera_col} attached_object={self.attached_object} attached_vehicle={self.attached_vehicle} attach_offset={self.attach_offset} attach_dir={self.attach_dir} sync_rotation={self.sync_rotation}>'
-
-    def __len__(self):
-        return 64 if (self.attached_object != INVALID_ID or self.attached_vehicle != INVALID_ID) else 39
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.object_id)
@@ -1045,18 +767,10 @@ class CreateObject(Rpc):
             attach_dir = None
             sync_rotation = None
         return CreateObject(object_id, model_id, pos, dir, draw_distance, no_camera_col, attached_object, attached_vehicle, attach_offset, attach_rot, sync_rotation)
-RPC.CREATE_OBJECT.decode_rpc_payload = CreateObject.decode_rpc_payload
-
 
 class SetObjectPos(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_OBJECT_POS)
-
-    def __str__(self):
-        return f'<SetObjectPos>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1064,18 +778,10 @@ class SetObjectPos(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetObjectPos()
-RPC.SET_OBJECT_POS.decode_rpc_payload = SetObjectPos.decode_rpc_payload
-
 
 class SetObjectRotation(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_OBJECT_ROTATION)
-
-    def __str__(self):
-        return f'<SetObjectRotation>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1083,19 +789,11 @@ class SetObjectRotation(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetObjectRotation()
-RPC.SET_OBJECT_ROTATION.decode_rpc_payload = SetObjectRotation.decode_rpc_payload
-
 
 class DestroyObject(Rpc):
     def __init__(self, object_id):
         super().__init__(RPC.DESTROY_OBJECT)
         self.object_id = object_id
-
-    def __str__(self):
-        return f'<DestroyObject object_id={self.object_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.object_id)
@@ -1104,7 +802,6 @@ class DestroyObject(Rpc):
     def decode_rpc_payload(bs):
         object_id = bs.read_u16()
         return DestroyObject(object_id)
-RPC.DESTROY_OBJECT.decode_rpc_payload = DestroyObject.decode_rpc_payload
 
 ''' C2S
 Client sends a command to the server, e.g. "/help"
@@ -1114,12 +811,6 @@ class RequestChatCommand(Rpc):
         super().__init__(RPC.REQUEST_CHAT_COMMAND)
         self.command = command
 
-    def __str__(self):
-        return f"<RequestChatCommand '{self.command}'>"
-
-    def __len__(self):
-        return TO_BITS(4 + len(self.command.encode(SAMP_ENCODING)))
-
     def encode_rpc_payload(self, bs):
         bs.write_dynamic_buffer_u32(self.command.encode(SAMP_ENCODING))
 
@@ -1127,18 +818,10 @@ class RequestChatCommand(Rpc):
     def decode_rpc_payload(bs):
         command = bs.read_dynamic_buffer_u32().decode(SAMP_ENCODING)
         return RequestChatCommand(command)
-RPC.REQUEST_CHAT_COMMAND.decode_rpc_payload = RequestChatCommand.decode_rpc_payload
-
 
 class SendSpawn(Rpc):
     def __init__(self):
         super().__init__(RPC.SEND_SPAWN)
-
-    def __str__(self):
-        return f'<SendSpawn>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1146,20 +829,12 @@ class SendSpawn(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SendSpawn()
-RPC.SEND_SPAWN.decode_rpc_payload = SendSpawn.decode_rpc_payload
-
 
 class DeathNotification(Rpc):
     def __init__(self, reason, killer_id):
         super().__init__(RPC.DEATH_NOTIFICATION)
         self.reason = reason
         self.killer_id = killer_id
-
-    def __str__(self):
-        return f'<DeathNotification reason={self.reason} killer_id={self.killer_id}>'
-
-    def __len__(self):
-        return TO_BITS(3)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.reason)
@@ -1170,18 +845,10 @@ class DeathNotification(Rpc):
         reason = bs.read_u8()
         killer_id = bs.read_u16()
         return DeathNotification(reason, killer_id)
-RPC.DEATH_NOTIFICATION.decode_rpc_payload = DeathNotification.decode_rpc_payload
-
 
 class NpcJoin(Rpc):
     def __init__(self):
         super().__init__(RPC.NPC_JOIN)
-
-    def __str__(self):
-        return f'<NpcJoin>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1189,8 +856,6 @@ class NpcJoin(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return NpcJoin()
-RPC.NPC_JOIN.decode_rpc_payload = NpcJoin.decode_rpc_payload
-
 
 class KillFeedMessage(Rpc):
     def __init__(self, killer_id, victim_id, reason):
@@ -1198,12 +863,6 @@ class KillFeedMessage(Rpc):
         self.killer_id = killer_id
         self.victim_id = victim_id
         self.reason = reason
-
-    def __str__(self):
-        return f'<KillFeedMessage killer_id={self.killer_id} victim_id={self.victim_id} reason={self.reason.name}({self.reason.value})>'
-
-    def __len__(self):
-        return TO_BITS(5)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.killer_id)
@@ -1216,8 +875,6 @@ class KillFeedMessage(Rpc):
         victim_id = bs.read_u16()
         reason = bs.read_u8()
         return KillFeedMessage(killer_id, victim_id, reason)
-RPC.KILL_FEED_MESSAGE.decode_rpc_payload = KillFeedMessage.decode_rpc_payload
-
 
 class SetMapIcon(Rpc):
     def __init__(self, icon_id, pos, type, color, style):
@@ -1227,12 +884,6 @@ class SetMapIcon(Rpc):
         self.type = type
         self.color = color
         self.style = style
-
-    def __str__(self):
-        return f'<SetMapIcon icon_id={self.icon_id} pos={self.pos} type={self.type} color={self.color:08x} style={self.style}>'
-
-    def __len__(self):
-        return TO_BITS(19)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.icon_id)
@@ -1249,18 +900,10 @@ class SetMapIcon(Rpc):
         color = bs.read_u32()
         style = bs.read_u8()
         return SetMapIcon(icon_id, pos, type_, color, style)
-RPC.SET_MAP_ICON.decode_rpc_payload = SetMapIcon.decode_rpc_payload
-
 
 class RemoveVehicleComponent(Rpc):
     def __init__(self):
         super().__init__(RPC.REMOVE_VEHICLE_COMPONENT)
-
-    def __str__(self):
-        return f'<RemoveVehicleComponent>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1268,19 +911,11 @@ class RemoveVehicleComponent(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return RemoveVehicleComponent()
-RPC.REMOVE_VEHICLE_COMPONENT.decode_rpc_payload = RemoveVehicleComponent.decode_rpc_payload
-
 
 class Update3DTextLabel(Rpc):
     def __init__(self, label_id):
         super().__init__(RPC.UPDATE_3D_TEXT_LABEL)
         self.label_id = label_id
-
-    def __str__(self):
-        return f'<Update3DTextLabel label_id={self.label_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.label_id)
@@ -1289,7 +924,6 @@ class Update3DTextLabel(Rpc):
     def decode_rpc_payload(bs):
         label_id = bs.read_u16()
         return Update3DTextLabel(label_id)
-RPC.UPDATE_3D_TEXT_LABEL.decode_rpc_payload = Update3DTextLabel.decode_rpc_payload
 
 '''
 Text above a player's name tag.
@@ -1302,12 +936,6 @@ class PlayerBubble(Rpc):
         self.draw_distance = draw_distance
         self.expire_time = expire_time
         self.text = text
-
-    def __str__(self):
-        return f"<PlayerBubble player_id={self.player_id} color={self.color:08x} draw_distance={self.draw_distance:.02f} expire_time={self.expire_time} text='{self.text}'>"
-
-    def __len__(self):
-        return TO_BITS(2 + 4 + 4 + 4 + 1 + len(self.text.encode(SAMP_ENCODING)))
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -1325,19 +953,11 @@ class PlayerBubble(Rpc):
         #text = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         text=''
         return PlayerBubble(player_id, color, draw_distance, expire_time, text)
-RPC.PLAYER_BUBBLE.decode_rpc_payload = PlayerBubble.decode_rpc_payload
-
 
 class SendGameTimeUpdate(Rpc):
     def __init__(self, time):
         super().__init__(RPC.SEND_GAME_TIME_UPDATE)
         self.time = time
-
-    def __str__(self):
-        return f'<SendGameTimeUpdate time={self.time:x}>'
-
-    def __len__(self):
-        return 4
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.time)
@@ -1346,8 +966,6 @@ class SendGameTimeUpdate(Rpc):
     def decode_rpc_payload(bs):
         time = bs.read_u32()
         return SendGameTimeUpdate(time)
-RPC.SEND_GAME_TIME_UPDATE.decode_rpc_payload = SendGameTimeUpdate.decode_rpc_payload
-
 
 class DIALOG_STYLE(enum.IntEnum):
     MESSAGE            = 0
@@ -1371,18 +989,6 @@ class ShowDialog(Rpc):
         self.button2 = button2
         self.text = text
 
-    def __str__(self):
-        return f"<ShowDialog dialog_id={self.dialog_id} style={self.style.name}({self.style.value}) title='{self.title}' button1='{self.button1}' button2='{self.button2}' text={repr(self.text)}>"
-
-    def __len__(self):
-        bs = Bitstream(2+len(self.text))
-        bs.write_huffman_buffer(self.text.encode(SAMP_ENCODING), default_huffman_tree.root_node)
-        huffman_buffer_size = TO_BYTES(bs.len)
-        return TO_BITS(3 + (1+len(self.title.encode(SAMP_ENCODING))) \
-            + (1+len(self.button1.encode(SAMP_ENCODING))) \
-            + (1+len(self.title.encode(SAMP_ENCODING))) \
-            + huffman_buffer_size)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.dialog_id)
         bs.write_u8(self.style)
@@ -1400,8 +1006,6 @@ class ShowDialog(Rpc):
         button2 = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         text = bs.read_huffman_buffer(default_huffman_tree.root_node).decode(SAMP_ENCODING)
         return ShowDialog(dialog_id, style, title, button1, button2, text)
-RPC.SHOW_DIALOG.decode_rpc_payload = ShowDialog.decode_rpc_payload
-
 
 '''
 Respond to the current dialog on the screen
@@ -1422,12 +1026,6 @@ class DialogResponse(Rpc):
         self.list_index = list_index
         self.text = text
 
-    def __str__(self):
-        return f'<DialogResponse dialog_id={self.dialog_id} button={self.button.name}({self.button.value}) list_index={self.list_index} text={repr(self.text)}>'
-
-    def __len__(self):
-        return TO_BITS(2 + 1 + 2 + 1 + len(self.text.encode(SAMP_ENCODING)))
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.dialog_id)
         bs.write_u8(self.button)
@@ -1441,7 +1039,6 @@ class DialogResponse(Rpc):
         list_index = bs.read_u16()
         text = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return DialogResponse(dialog_id, button, list_index, text)
-RPC.DIALOG_RESPONSE.decode_rpc_payload = DialogResponse.decode_rpc_payload
 
 ''' S2C
 Server sends to destroy a pickup created with CreatePickup
@@ -1452,12 +1049,6 @@ class DestroyPickup(Rpc):
         super().__init__(RPC.DESTROY_PICKUP)
         self.pickup_id = pickup_id
 
-    def __str__(self):
-        return f'<DestroyPickup pickup_id={self.pickup_id}>'
-
-    def __len__(self):
-        return TO_BITS(4)
-
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.pickup_id)
 
@@ -1465,18 +1056,10 @@ class DestroyPickup(Rpc):
     def decode_rpc_payload(bs):
         pickup_id = bs.read_u32()
         return DestroyPickup(pickup_id)
-RPC.DESTROY_PICKUP.decode_rpc_payload = DestroyPickup.decode_rpc_payload
-
 
 class LinkVehicleToInterior(Rpc):
     def __init__(self):
         super().__init__(RPC.LINK_VEHICLE_TO_INTERIOR)
-
-    def __str__(self):
-        return f'<LinkVehicleToInterior>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1484,19 +1067,11 @@ class LinkVehicleToInterior(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return LinkVehicleToInterior()
-RPC.LINK_VEHICLE_TO_INTERIOR.decode_rpc_payload = LinkVehicleToInterior.decode_rpc_payload
-
 
 class SetPlayerArmor(Rpc):
     def __init__(self, armor):
         super().__init__(RPC.SET_PLAYER_ARMOR)
         self.armor = float(armor)
-
-    def __str__(self):
-        return f'<SetPlayerArmor armor={self.armor:.02f}>'
-
-    def __len__(self):
-        return TO_BITS(4)
 
     def encode_rpc_payload(self, bs):
         bs.write_float(self.armor)
@@ -1505,18 +1080,10 @@ class SetPlayerArmor(Rpc):
     def decode_rpc_payload(bs):
         armor = bs.read_float()
         return SetPlayerArmor(armor)
-RPC.SET_PLAYER_ARMOR.decode_rpc_payload = SetPlayerArmor.decode_rpc_payload
-
 
 class SetArmedWeapon(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_ARMED_WEAPON)
-
-    def __str__(self):
-        return f'<SetArmedWeapon>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1524,8 +1091,6 @@ class SetArmedWeapon(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetArmedWeapon()
-RPC.SET_ARMED_WEAPON.decode_rpc_payload = SetArmedWeapon.decode_rpc_payload
-
 
 class SetSpawnInfo(Rpc):
     def __init__(self, team=0, skin=SKIN.CJ, pos=Vec3(0.0, 0.0, 0.0), rotation=0.0, weapon1=Weapon(), weapon2=Weapon(), weapon3=Weapon()):
@@ -1537,12 +1102,6 @@ class SetSpawnInfo(Rpc):
         self.weapon1 = weapon1
         self.weapon2 = weapon2
         self.weapon3 = weapon3
-
-    def __str__(self):
-        return f'<SetSpawnInfo team={self.team} skin={self.skin.name}({self.skin.value}) pos={self.pos} rotation={self.rotation:.2f} weapon1={self.weapon1} weapon2={self.weapon2} weapon3={self.weapon3}'
-
-    def __len__(self):
-        return TO_BITS(46)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.team)
@@ -1574,20 +1133,12 @@ class SetSpawnInfo(Rpc):
         weapon2 = Weapon(weapon2_id, weapon2_ammo)
         weapon3 = Weapon(weapon3_id, weapon3_ammo)
         return SetSpawnInfo(team, skin, pos, rotation, weapon1, weapon2, weapon3)
-RPC.SET_SPAWN_INFO.decode_server_rpc_payload = SetSpawnInfo.decode_rpc_payload
-
 
 class SetPlayerTeam(Rpc):
     def __init__(self, player_id, team):
         super().__init__(RPC.SET_PLAYER_TEAM)
         self.player_id = player_id
         self.team = team
-
-    def __str__(self):
-        return f'<SetPlayerTeam player_id={self.player_id} team={self.team}>'
-
-    def __len__(self):
-        return TO_BITS(3)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -1598,8 +1149,6 @@ class SetPlayerTeam(Rpc):
         player_id = bs.read_u16()
         team = bs.read_u8()
         return SetPlayerTeam(player_id, team)
-RPC.SET_PLAYER_TEAM.decode_rpc_payload = SetPlayerTeam.decode_rpc_payload
-
 
 ''' S2C
 Puts a player in a vehicle
@@ -1613,12 +1162,6 @@ class PutPlayerInVehicle(Rpc):
         self.vehicle_id = vehicle_id
         self.seat_id = seat_id
 
-    def __str__(self):
-        return f'<PutPlayerInVehicle vehicle_id={self.vehicle_id} seat_id={self.seat_id}>'
-
-    def __len__(self):
-        return TO_BITS(3)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
         bs.write_u8(self.seat_id)
@@ -1628,8 +1171,6 @@ class PutPlayerInVehicle(Rpc):
         vehicle_id = bs.read_u16()
         seat_id = bs.read_u8()
         return PutPlayerInVehicle(vehicle_id, seat_id)
-RPC.PUT_PLAYER_IN_VEHICLE.decode_rpc_payload = PutPlayerInVehicle.decode_rpc_payload
-
 
 ''' S2C
 Removes a player from the vehicle they are currently in
@@ -1638,32 +1179,18 @@ class RemovePlayerFromVehicle(Rpc):
     def __init__(self):
         super().__init__(RPC.REMOVE_PLAYER_FROM_VEHICLE)
 
-    def __str__(self):
-        return f'<RemovePlayerFromVehicle>'
-
-    def __len__(self):
-        return 0
-
     def encode_rpc_payload(self, bs):
         pass
 
     @staticmethod
     def decode_rpc_payload(bs):
         return RemovePlayerFromVehicle()
-RPC.REMOVE_PLAYER_FROM_VEHICLE.decode_rpc_payload = RemovePlayerFromVehicle.decode_rpc_payload
-
 
 class SetPlayerColor(Rpc):
     def __init__(self, player_id, color):
         super().__init__(RPC.SET_PLAYER_COLOR)
         self.player_id = player_id
         self.color = color
-
-    def __str__(self):
-        return f'<SetPlayerColor id={self.player_id} color={self.color:08x}>'
-
-    def __len__(self):
-        return TO_BITS(6)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -1674,7 +1201,6 @@ class SetPlayerColor(Rpc):
         player_id = bs.read_u16()
         color = bs.read_u32()
         return SetPlayerColor(player_id, color)
-RPC.SET_PLAYER_COLOR.decode_rpc_payload = SetPlayerColor.decode_rpc_payload
 
 ''' S2C
 Makes 'text' appear in 'style' for 'duration' milliseconds on the screen of
@@ -1690,12 +1216,6 @@ class ShowGameText(Rpc):
         self.duration = duration
         self.text = text
 
-    def __str__(self):
-        return f"<ShowGameText style={self.style} duration={self.duration} text='{self.text}'>"
-
-    def __len__(self):
-        return TO_BITS(12 + len(self.text.encode(SAMP_ENCODING)))
-
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.style)
         bs.write_u32(self.duration)
@@ -1707,18 +1227,10 @@ class ShowGameText(Rpc):
         duration = bs.read_u32()
         text = bs.read_dynamic_buffer_u32().decode(SAMP_ENCODING)
         return ShowGameText(style, duration, text)
-RPC.SHOW_GAME_TEXT.decode_rpc_payload = ShowGameText.decode_rpc_payload
-
 
 class ForceClassSelection(Rpc):
     def __init__(self):
         super().__init__(RPC.FORCE_CLASS_SELECTION)
-
-    def __str__(self):
-        return f'<ForceClassSelection>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1726,18 +1238,10 @@ class ForceClassSelection(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ForceClassSelection()
-RPC.FORCE_CLASS_SELECTION.decode_rpc_payload = ForceClassSelection.decode_rpc_payload
-
 
 class AttachObjectToPlayer(Rpc):
     def __init__(self):
         super().__init__(RPC.ATTACH_OBJECT_TO_PLAYER)
-
-    def __str__(self):
-        return f'<AttachObjectToPlayer>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1745,18 +1249,10 @@ class AttachObjectToPlayer(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return AttachObjectToPlayer()
-RPC.ATTACH_OBJECT_TO_PLAYER.decode_rpc_payload = AttachObjectToPlayer.decode_rpc_payload
-
 
 class InitMenu(Rpc):
     def __init__(self):
         super().__init__(RPC.INIT_MENU)
-
-    def __str__(self):
-        return f'<InitMenu>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1764,18 +1260,10 @@ class InitMenu(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return InitMenu()
-RPC.INIT_MENU.decode_rpc_payload = InitMenu.decode_rpc_payload
-
 
 class ShowMenu(Rpc):
     def __init__(self):
         super().__init__(RPC.SHOW_MENU)
-
-    def __str__(self):
-        return f'<ShowMenu>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1783,18 +1271,10 @@ class ShowMenu(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ShowMenu()
-RPC.SHOW_MENU.decode_rpc_payload = ShowMenu.decode_rpc_payload
-
 
 class HideMenu(Rpc):
     def __init__(self):
         super().__init__(RPC.HIDE_MENU)
-
-    def __str__(self):
-        return f'<HideMenu>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1802,7 +1282,6 @@ class HideMenu(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return HideMenu()
-RPC.HIDE_MENU.decode_rpc_payload = HideMenu.decode_rpc_payload
 
 '''
 Type  Visible  Splits  Creates Fire  Physical Blast  Audible Sound       Range  Special 
@@ -1828,12 +1307,6 @@ class CreateExplosion(Rpc):
         self.type = type
         self.radius = radius
 
-    def __str__(self):
-        return f'<CreateExplosion pos={self.pos} type={self.type} radius={self.radius:.02f}>'
-
-    def __len__(self):
-        return TO_BITS(12+4+4)
-
     def encode_rpc_payload(self, bs):
         bs.write_vec3(self.pos)
         bs.write_u32(self.type)
@@ -1845,20 +1318,12 @@ class CreateExplosion(Rpc):
         type = bs.read_u32()
         radius = bs.read_float()
         return CreateExplosion(pos, type, radius)
-RPC.CREATE_EXPLOSION.decode_rpc_payload = CreateExplosion.decode_rpc_payload
-
 
 class TogglePlayerNameTag(Rpc):
     def __init__(self, player_id, show):
         super().__init__(RPC.TOGGLE_PLAYER_NAME_TAG)
         self.player_id = player_id
         self.show = show
-
-    def __str__(self):
-        return f'<TogglePlayerNameTag player_id={self.player_id} show={self.show}>'
-
-    def __len__(self):
-        return TO_BITS(3)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -1869,18 +1334,10 @@ class TogglePlayerNameTag(Rpc):
         player_id = bs.read_u16()
         show = bs.read_u8()
         return TogglePlayerNameTag(player_id, show)
-RPC.TOGGLE_PLAYER_NAME_TAG.decode_rpc_payload = TogglePlayerNameTag.decode_rpc_payload
-
 
 class AttachCameraToObject(Rpc):
     def __init__(self):
         super().__init__(RPC.ATTACH_CAMERA_TO_OBJECT)
-
-    def __str__(self):
-        return f'<AttachCameraToObject>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1888,7 +1345,6 @@ class AttachCameraToObject(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return AttachCameraToObject()
-RPC.ATTACH_CAMERA_TO_OBJECT.decode_rpc_payload = AttachCameraToObject.decode_rpc_payload
 
 '''
 pos_set:
@@ -1906,12 +1362,6 @@ class InterpolateCamera(Rpc):
         self.time = time
         self.cut_type = cut_type
 
-    def __str__(self):
-        return f'<InterpolateCamera pos_set={self.pos_set} from_pos={self.from_pos} to_pos={self.to_pos} time={self.time} cut_type={self.cut_type}>'
-
-    def __len__(self):
-        return 1 + TO_BITS(29)
-
     def encode_rpc_payload(self, bs):
         bs.write_bool(self.pos_set)
         self.from_pos.encode(bs)
@@ -1927,19 +1377,11 @@ class InterpolateCamera(Rpc):
         time = bs.read_u32()
         cut_type = bs.read_u8()
         return InterpolateCamera(pos_set, from_pos, to_pos, time, cut_type)
-RPC.INTERPOLATE_CAMERA.decode_rpc_payload = InterpolateCamera.decode_rpc_payload
-
 
 class ClickTextdraw(Rpc):
     def __init__(self, textdraw_id):
         super().__init__(RPC.CLICK_TEXTDRAW)
         self.textdraw_id = textdraw_id
-
-    def __str__(self):
-        return f'<ClickTextdraw textdraw_id={self.textdraw_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
@@ -1948,7 +1390,6 @@ class ClickTextdraw(Rpc):
     def decode_rpc_payload(bs):
         textdraw_id = bs.read_u16()
         return ClickTextdraw(textdraw_id)
-RPC.CLICK_TEXTDRAW.decode_client_rpc_payload = ClickTextdraw.decode_rpc_payload
 
 '''
 Set whether or not textdraw selection is enabled or disabled
@@ -1959,12 +1400,6 @@ class ToggleTextdrawsClickable(Rpc):
         self.clickable = clickable
         self.color = color
 
-    def __str__(self):
-        return f'<ToggleTextdrawsClickable clickable={self.clickable} color={self.color:08x}>'
-
-    def __len__(self):
-        return 1 + TO_BITS(4)
-
     def encode_rpc_payload(self, bs):
         bs.write_bool(self.clickable)
         bs.write_u32(self.color)
@@ -1974,17 +1409,10 @@ class ToggleTextdrawsClickable(Rpc):
         clickable = bs.read_bool()
         color = bs.read_u32()
         return ToggleTextdrawsClickable(clickable, color)
-RPC.TOGGLE_TEXTDRAWS_CLICKABLE.decode_server_rpc_payload = ToggleTextdrawsClickable.decode_rpc_payload
 
 class SetPlayerObjectMaterial(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_OBJECT_MATERIAL)
-
-    def __str__(self):
-        return f'<SetPlayerObjectMaterial>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -1992,18 +1420,10 @@ class SetPlayerObjectMaterial(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerObjectMaterial()
-RPC.SET_PLAYER_OBJECT_MATERIAL.decode_rpc_payload = SetPlayerObjectMaterial.decode_rpc_payload
-
 
 class StopFlashGangZone(Rpc):
     def __init__(self):
         super().__init__(RPC.STOP_FLASH_GANG_ZONE)
-
-    def __str__(self):
-        return f'<StopFlashGangZone>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2011,8 +1431,6 @@ class StopFlashGangZone(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return StopFlashGangZone()
-RPC.STOP_FLASH_GANG_ZONE.decode_rpc_payload = StopFlashGangZone.decode_rpc_payload
-
 
 class ApplyPlayerAnimation(Rpc):
     def __init__(self, player_id, anim_lib, anim_name, delta, loop, lockx, locky, freeze, time):
@@ -2026,12 +1444,6 @@ class ApplyPlayerAnimation(Rpc):
         self.locky = locky
         self.freeze = freeze
         self.time = time
-
-    def __str__(self):
-        return f"<ApplyPlayerAnimation player_id={self.player_id} anim_lib='{self.anim_lib}' anim_name='{self.anim_name}' delta={self.delta:.02f} loop={self.loop} lockx={self.lockx} locky={self.locky} freeze={self.freeze} time={self.time}>"
-
-    def __len__(self):
-        return TO_BITS(2 + 1 + len(self.anim_lib.encode(SAMP_ENCODING)) + 1 + len(self.anim_name.encode(SAMP_ENCODING)) + 4 + 1*4 + 4)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -2056,19 +1468,11 @@ class ApplyPlayerAnimation(Rpc):
         freeze = bs.read_bit()
         time = bs.read_u32()
         return ApplyPlayerAnimation(player_id, anim_lib, anim_name, delta, loop, lockx, locky, freeze, time)
-RPC.APPLY_PLAYER_ANIMATION.decode_rpc_payload = ApplyPlayerAnimation.decode_rpc_payload
-
 
 class ClearPlayerAnimations(Rpc):
     def __init__(self, player_id):
         super().__init__(RPC.CLEAR_PLAYER_ANIMATIONS)
         self.player_id = player_id
-
-    def __str__(self):
-        return f'<ClearPlayerAnimations player_id={self.player_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -2077,18 +1481,10 @@ class ClearPlayerAnimations(Rpc):
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         return ClearPlayerAnimations(player_id)
-RPC.CLEAR_PLAYER_ANIMATIONS.decode_rpc_payload = ClearPlayerAnimations.decode_rpc_payload
-
 
 class SetPlayerSpecialAction(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_SPECIAL_ACTION)
-
-    def __str__(self):
-        return f'<SetPlayerSpecialAction>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2096,18 +1492,10 @@ class SetPlayerSpecialAction(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerSpecialAction()
-RPC.SET_PLAYER_SPECIAL_ACTION.decode_rpc_payload = SetPlayerSpecialAction.decode_rpc_payload
-
 
 class SetPlayerFightingStyle(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_FIGHTING_STYLE)
-
-    def __str__(self):
-        return f'<SetPlayerFightingStyle>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2115,18 +1503,10 @@ class SetPlayerFightingStyle(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerFightingStyle()
-RPC.SET_PLAYER_FIGHTING_STYLE.decode_rpc_payload = SetPlayerFightingStyle.decode_rpc_payload
-
 
 class SetPlayerVelocity(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_VELOCITY)
-
-    def __str__(self):
-        return f'<SetPlayerVelocity>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2134,18 +1514,10 @@ class SetPlayerVelocity(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerVelocity()
-RPC.SET_PLAYER_VELOCITY.decode_rpc_payload = SetPlayerVelocity.decode_rpc_payload
-
 
 class SetVehicleVelocity(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_VEHICLE_VELOCITY)
-
-    def __str__(self):
-        return f'<SetVehicleVelocity>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2153,20 +1525,12 @@ class SetVehicleVelocity(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetVehicleVelocity()
-RPC.SET_VEHICLE_VELOCITY.decode_rpc_payload = SetVehicleVelocity.decode_rpc_payload
-
 
 class ChatMessage(Rpc):
     def __init__(self, message, color):
         super().__init__(RPC.CHAT_MESSAGE)
         self.message = message
         self.color = color
-
-    def __str__(self):
-        return f"<ChatMessage color={self.color:08x} '{self.message}'>"
-    
-    def __len__(self):
-        return TO_BITS(4 + 4 + len(self.message.encode(SAMP_ENCODING)))
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.color)
@@ -2177,19 +1541,11 @@ class ChatMessage(Rpc):
         color = bs.read_u32()
         message = bs.read_dynamic_buffer_u32().decode(SAMP_ENCODING)
         return ChatMessage(message, color)
-RPC.CHAT_MESSAGE.decode_rpc_payload = ChatMessage.decode_rpc_payload
-
 
 class SetWorldTime(Rpc):
     def __init__(self, hour):
         super().__init__(RPC.SET_WORLD_TIME)
         self.hour = hour
-
-    def __str__(self):
-        return f'<SetWorldTime hour={self.hour}>'
-
-    def __len__(self):
-        return TO_BITS(1)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.hour)
@@ -2198,8 +1554,6 @@ class SetWorldTime(Rpc):
     def decode_rpc_payload(bs):
         hour = bs.read_u8()
         return SetWorldTime(hour)
-RPC.SET_WORLD_TIME.decode_rpc_payload = SetWorldTime.decode_rpc_payload
-
 
 ''' S2C
 Type Description
@@ -2230,12 +1584,6 @@ class CreatePickup(Rpc):
         self.type = type
         self.pos = pos
 
-    def __str__(self):
-        return f'<CreatePickup pickup_id={self.pickup_id} model_id={self.model_id} type={self.type} pos={self.pos}>'
-
-    def __len__(self):
-        return TO_BITS(4+4+4+12)
-
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.pickup_id)
         bs.write_u32(self.model_id)
@@ -2249,18 +1597,10 @@ class CreatePickup(Rpc):
         type = bs.read_u32()
         pos = bs.read_vec3()
         return CreatePickup(pickup_id, model_id, type, pos)
-RPC.CREATE_PICKUP.decode_rpc_payload = CreatePickup.decode_rpc_payload
-
 
 class ScmEvent(Rpc):
     def __init__(self):
         super().__init__(RPC.SCM_EVENT)
-
-    def __str__(self):
-        return f'<ScmEvent>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2268,18 +1608,10 @@ class ScmEvent(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ScmEvent()
-RPC.SCM_EVENT.decode_rpc_payload = ScmEvent.decode_rpc_payload
-
 
 class DestroyWeaponPickup(Rpc):
     def __init__(self):
         super().__init__(RPC.DESTROY_WEAPON_PICKUP)
-
-    def __str__(self):
-        return f'<DestroyWeaponPickup>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2287,8 +1619,6 @@ class DestroyWeaponPickup(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return DestroyWeaponPickup()
-RPC.DESTROY_WEAPON_PICKUP.decode_rpc_payload = DestroyWeaponPickup.decode_rpc_payload
-
 
 class MoveObject(Rpc):
     def __init__(self, object_id, pos, target, speed, target_r):
@@ -2298,12 +1628,6 @@ class MoveObject(Rpc):
         self.target = target
         self.speed = speed
         self.target_r = target_r
-
-    def __str__(self):
-        return f'<MoveObject object_id={self.object_id} pos={self.pos} target={self.target} speed={self.speed:.02f} target_r={self.target_r}>'
-
-    def __len__(self):
-        return TO_BITS(42)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.object_id)
@@ -2320,20 +1644,12 @@ class MoveObject(Rpc):
         speed = bs.read_float()
         target_r = bs.read_vec3()
         return MoveObject(object_id, pos, target, speed, target_r)
-RPC.MOVE_OBJECT.decode_rpc_payload = MoveObject.decode_rpc_payload
-
 
 class RequestChatMessage(Rpc):
     def __init__(self, message):
         super().__init__(RPC.REQUEST_CHAT_MESSAGE)
         self.message = message
     
-    def __str__(self):
-        return f"<RequestChatMessage '{self.message}'>"
-
-    def __len__(self):
-        return TO_BITS(1 + len(self.message.encode(SAMP_ENCODING)))
-
     def encode_rpc_payload(self, bs):
         bs.write_dynamic_buffer_u8(self.message.encode(SAMP_ENCODING))
 
@@ -2341,8 +1657,6 @@ class RequestChatMessage(Rpc):
     def decode_rpc_payload(bs):
         message = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return RequestChatMessage(message)
-RPC.REQUEST_CHAT_MESSAGE.decode_client_rpc_payload = RequestChatMessage.decode_rpc_payload
-
 
 class PlayerChatMessage(Rpc):
     def __init__(self, player_id, message):
@@ -2350,12 +1664,6 @@ class PlayerChatMessage(Rpc):
         self.player_id = player_id
         self.message = message
     
-    def __str__(self):
-        return f"<PlayerChatMessage player_id={self.player_id} '{self.message}'>"
-
-    def __len__(self):
-        return TO_BITS(2 + 1 + len(self.message.encode(SAMP_ENCODING)))
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
         bs.write_dynamic_buffer_u8(self.message.encode(SAMP_ENCODING))
@@ -2365,17 +1673,10 @@ class PlayerChatMessage(Rpc):
         player_id = bs.read_u16()
         message = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return PlayerChatMessage(player_id, message)
-RPC.PLAYER_CHAT_MESSAGE.decode_server_rpc_payload = PlayerChatMessage.decode_rpc_payload
 
 class SvrStats(Rpc):
     def __init__(self):
         super().__init__(RPC.SVR_STATS)
-
-    def __str__(self):
-        return f'<SvrStats>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2383,7 +1684,6 @@ class SvrStats(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SvrStats()
-RPC.SVR_STATS.decode_rpc_payload = SvrStats.decode_rpc_payload
 
 # https://www.blast.hk/threads/11140/
 #unknown types? (5, 69)
@@ -2424,12 +1724,6 @@ class ClientCheck(Rpc):
         self.offset = offset
         self.size = size
 
-    def __str__(self):
-        return f'<ClientCheck type={self.type} arg={self.arg:08x} offset={self.offset} size={self.size}>'
-
-    def __len__(self):
-        return TO_BITS(9)
-
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.type)
         bs.write_u32(self.arg)
@@ -2443,7 +1737,6 @@ class ClientCheck(Rpc):
         offset = bs.read_u16()
         size = bs.read_u16()
         return ClientCheck(type, arg, offset, size)
-RPC.CLIENT_CHECK.decode_server_rpc_payload = ClientCheck.decode_rpc_payload
 
 ''' C2S
 Responds to a server ClientCheck
@@ -2458,12 +1751,6 @@ class ClientCheckResponse(Rpc):
         self.arg = arg
         self.checksum = checksum
 
-    def __str__(self):
-        return f'<ClientCheckResponse type={self.type} arg={self.arg:08x} checksum={self.checksum}>'
-
-    def __len__(self):
-        return TO_BITS(6)
-
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.type)
         bs.write_u32(self.arg)
@@ -2475,19 +1762,11 @@ class ClientCheckResponse(Rpc):
         arg = bs.read_u32()
         checksum = bs.read_u8()
         return ClientCheckResponse(type, arg, checksum)
-RPC.CLIENT_CHECK.decode_client_rpc_payload = ClientCheckResponse.decode_rpc_payload
-
 
 class ToggleStuntBonus(Rpc):
     def __init__(self, enable):
         super().__init__(RPC.TOGGLE_STUNT_BONUS)
         self.enable = enable
-
-    def __str__(self):
-        return f'<ToggleStuntBonus enable={self.enable}>'
-
-    def __len__(self):
-        return TO_BITS(1)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.enable)
@@ -2496,20 +1775,12 @@ class ToggleStuntBonus(Rpc):
     def decode_rpc_payload(bs):
         enable = bs.read_u8()
         return ToggleStuntBonus(enable)
-RPC.TOGGLE_STUNT_BONUS.decode_rpc_payload = ToggleStuntBonus.decode_rpc_payload
-
 
 class SetTextdrawText(Rpc):
     def __init__(self, textdraw_id, text):
         super().__init__(RPC.SET_TEXTDRAW_TEXT)
         self.textdraw_id = textdraw_id
         self.text = text
-
-    def __str__(self):
-        return f"<SetTextdrawText textdraw_id={self.textdraw_id} text='{self.text}'>" 
-
-    def __len__(self):
-        return TO_BITS(4 + 2 + len(self.text.encode(SAMP_ENCODING)))
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
@@ -2520,8 +1791,6 @@ class SetTextdrawText(Rpc):
         textdraw_id = bs.read_u16()
         text = bs.read_dynamic_buffer_u16().decode(SAMP_ENCODING)
         return SetTextdrawText(textdraw_id, text)
-RPC.SET_TEXTDRAW_TEXT.decode_rpc_payload = SetTextdrawText.decode_rpc_payload
-
 
 class DamageVehicle(Rpc):
     def __init__(self, vehicle_id, panels, doors, lights, tires):
@@ -2531,12 +1800,6 @@ class DamageVehicle(Rpc):
         self.doors = doors
         self.lights = lights
         self.tires = tires
-
-    def __str__(self):
-        return f'<DamageVehicle vehicle_id={self.vehicle_id} panels={self.panels} doors={self.doors} lights={self.lights} tires={self.tires}>'
-
-    def __len__(self):
-        return TO_BITS(12)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -2553,20 +1816,12 @@ class DamageVehicle(Rpc):
         lights = bs.read_u8()
         tires = bs.read_u8()
         return DamageVehicle(vehicle_id, panels, doors, lights, tires)
-RPC.DAMAGE_VEHICLE.decode_rpc_payload = DamageVehicle.decode_rpc_payload
-
 
 class SetCheckpoint(Rpc):
     def __init__(self, pos, radius):
         super().__init__(RPC.SET_CHECKPOINT)
         self.pos = pos
         self.radius = radius
-
-    def __str__(self):
-        return f'<SetCheckpoint pos={self.pos} radius={self.radius}>'
-
-    def __len__(self):
-        return TO_BITS(12+4)
 
     def encode_rpc_payload(self, bs):
         bs.write_vec3(self.pos)
@@ -2577,18 +1832,10 @@ class SetCheckpoint(Rpc):
         pos = bs.read_vec3()
         radius = bs.read_float()
         return SetCheckpoint(pos, radius)
-RPC.SET_CHECKPOINT.decode_rpc_payload = SetCheckpoint.decode_rpc_payload
-
 
 class AddGangZone(Rpc):
     def __init__(self):
         super().__init__(RPC.ADD_GANG_ZONE)
-
-    def __str__(self):
-        return f'<AddGangZone>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2596,18 +1843,10 @@ class AddGangZone(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return AddGangZone()
-RPC.ADD_GANG_ZONE.decode_rpc_payload = AddGangZone.decode_rpc_payload
-
 
 class PlayCrimeReport(Rpc):
     def __init__(self):
         super().__init__(RPC.PLAY_CRIME_REPORT)
-
-    def __str__(self):
-        return f'<PlayCrimeReport>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2615,18 +1854,10 @@ class PlayCrimeReport(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return PlayCrimeReport()
-RPC.PLAY_CRIME_REPORT.decode_rpc_payload = PlayCrimeReport.decode_rpc_payload
-
 
 class SetPlayerAttachedObject(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_ATTACHED_OBJECT)
-
-    def __str__(self):
-        return f'<SetPlayerAttachedObject>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2634,7 +1865,6 @@ class SetPlayerAttachedObject(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerAttachedObject()
-RPC.SET_PLAYER_ATTACHED_OBJECT.decode_rpc_payload = SetPlayerAttachedObject.decode_rpc_payload
 
 # Used by GiveTakeDamage and GiveActorDamage
 class BODY_PART(enum.IntEnum):
@@ -2663,12 +1893,6 @@ class GiveTakeDamage(Rpc):
         self.weapon_id = weapon_id
         self.body_part = body_part
 
-    def __str__(self):
-        return f'<GiveTakeDamage take={self.take} player_id={self.player_id} amount={self.amount:.02f} weapon_id={self.weapon_id.name}({self.weapon_id.value}) body_part={self.body_part.name}({self.body_part.value})>'
-
-    def __len__(self):
-        return 1 + TO_BITS(14)
-
     def encode_rpc_payload(self, bs):
         bs.write_bool(self.take)
         bs.write_u16(self.player_id)
@@ -2684,18 +1908,10 @@ class GiveTakeDamage(Rpc):
         weapon_id = bs.read_u32()
         body_part = bs.read_u32()
         return GiveTakeDamage(take, player_id, amount, weapon_id, body_part)
-RPC.GIVE_TAKE_DAMAGE.decode_rpc_payload = GiveTakeDamage.decode_rpc_payload
-
 
 class EditAttachedObject(Rpc):
     def __init__(self):
         super().__init__(RPC.EDIT_ATTACHED_OBJECT)
-
-    def __str__(self):
-        return f'<EditAttachedObject>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2703,18 +1919,10 @@ class EditAttachedObject(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return EditAttachedObject()
-RPC.EDIT_ATTACHED_OBJECT.decode_rpc_payload = EditAttachedObject.decode_rpc_payload
-
 
 class EditObject(Rpc):
     def __init__(self):
         super().__init__(RPC.EDIT_OBJECT)
-
-    def __str__(self):
-        return f'<EditObject>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2722,8 +1930,6 @@ class EditObject(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return EditObject()
-RPC.EDIT_OBJECT.decode_rpc_payload = EditObject.decode_rpc_payload
-
 
 ''' C2S
 Client sends when the interior changes
@@ -2733,12 +1939,6 @@ class InteriorChange(Rpc):
         super().__init__(RPC.INTERIOR_CHANGE)
         self.interior_id = interior_id
 
-    def __str__(self):
-        return f'<InteriorChange interior_id={self.interior_id}>'
-
-    def __len__(self):
-        return TO_BITS(1)
-
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.interior_id)
 
@@ -2746,18 +1946,10 @@ class InteriorChange(Rpc):
     def decode_rpc_payload(bs):
         interior_id = bs.read_u8()
         return InteriorChange(interior_id)
-RPC.INTERIOR_CHANGE.decode_rpc_payload = InteriorChange.decode_rpc_payload
-
 
 class MapMarker(Rpc):
     def __init__(self):
         super().__init__(RPC.MAP_MARKER)
-
-    def __str__(self):
-        return f'<MapMarker>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2765,18 +1957,10 @@ class MapMarker(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return MapMarker()
-RPC.MAP_MARKER.decode_rpc_payload = MapMarker.decode_rpc_payload
-
 
 class RemoveGangZone(Rpc):
     def __init__(self):
         super().__init__(RPC.REMOVE_GANG_ZONE)
-
-    def __str__(self):
-        return f'<RemoveGangZone>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2784,18 +1968,10 @@ class RemoveGangZone(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return RemoveGangZone()
-RPC.REMOVE_GANG_ZONE.decode_rpc_payload = RemoveGangZone.decode_rpc_payload
-
 
 class FlashGangZone(Rpc):
     def __init__(self):
         super().__init__(RPC.FLASH_GANG_ZONE)
-
-    def __str__(self):
-        return f'<FlashGangZone>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2803,18 +1979,10 @@ class FlashGangZone(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return FlashGangZone()
-RPC.FLASH_GANG_ZONE.decode_rpc_payload = FlashGangZone.decode_rpc_payload
-
 
 class StopObject(Rpc):
     def __init__(self):
         super().__init__(RPC.STOP_OBJECT)
-
-    def __str__(self):
-        return f'<StopObject>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -2822,20 +1990,12 @@ class StopObject(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return StopObject()
-RPC.STOP_OBJECT.decode_rpc_payload = StopObject.decode_rpc_payload
-
 
 class SetVehicleNumberPlate(Rpc):
     def __init__(self, vehicle_id, text):
         super().__init__(RPC.SET_VEHICLE_NUMBER_PLATE)
         self.vehicle_id = vehicle_id
         self.text = text
-
-    def __str__(self):
-        return f"<SetVehicleNumberPlate vehicle_id={self.vehicle_id} text='{self.text}'>"
-
-    def __len__(self):
-        return TO_BITS(2 + 1 + len(self.text.encode(SAMP_ENCODING)))
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -2846,19 +2006,11 @@ class SetVehicleNumberPlate(Rpc):
         vehicle_id = bs.read_u16()
         text = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return SetVehicleNumberPlate(vehicle_id, text)
-RPC.SET_VEHICLE_NUMBER_PLATE.decode_rpc_payload = SetVehicleNumberPlate.decode_rpc_payload
-
 
 class TogglePlayerSpectating(Rpc):
     def __init__(self, spectating):
         super().__init__(RPC.TOGGLE_PLAYER_SPECTATING)
         self.spectating = spectating
-
-    def __str__(self):
-        return f'<TogglePlayerSpectating spectating={self.spectating}>'
-
-    def __len__(self):
-        return TO_BITS(4)
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.spectating)
@@ -2867,7 +2019,6 @@ class TogglePlayerSpectating(Rpc):
     def decode_rpc_payload(bs):
         spectating = bs.read_u32()
         return TogglePlayerSpectating(spectating)
-RPC.TOGGLE_PLAYER_SPECTATING.decode_rpc_payload = TogglePlayerSpectating.decode_rpc_payload
 
 class SPECTATE_MODE(enum.IntEnum):
     NORMAL = 1 # Normal spectate mode (third person point of view). Camera can not be changed
@@ -2880,12 +2031,6 @@ class SpectatePlayer(Rpc):
         self.player_id = player_id
         self.mode = SPECTATE_MODE(mode)
 
-    def __str__(self):
-        return f'<SpectatePlayer player_id={self.player_id} mode={self.mode.name}({self.mode.value})>'
-
-    def __len__(self):
-        return TO_BITS(3)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
         bs.write_u8(self.mode)
@@ -2895,20 +2040,12 @@ class SpectatePlayer(Rpc):
         player_id = bs.read_u16()
         mode = bs.read_u8()
         return SpectatePlayer(player_id, mode)
-RPC.SPECTATE_PLAYER.decode_rpc_payload = SpectatePlayer.decode_rpc_payload
-
 
 class SpectateVehicle(Rpc):
     def __init__(self, vehicle_id, mode):
         super().__init__(RPC.SPECTATE_VEHICLE)
         self.vehicle_id = vehicle_id
         self.mode = SPECTATE_MODE(mode)
-
-    def __str__(self):
-        return f'<SpectateVehicle vehicle_id={self.vehicle_id} mode={self.mode.name}({self.mode.value})>'
-
-    def __len__(self):
-        return TO_BITS(3)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -2919,18 +2056,11 @@ class SpectateVehicle(Rpc):
         vehicle_id = bs.read_u16()
         mode = bs.read_u8()
         return SpectateVehicle(vehicle_id, mode)
-RPC.SPECTATE_VEHICLE.decode_rpc_payload = SpectateVehicle.decode_rpc_payload
 
 class RequestClass(Rpc):
     def __init__(self, class_id=None):
         super().__init__(RPC.REQUEST_CLASS)
         self.class_id = class_id
-    
-    def __str__(self):
-        return f'<RequestClass class_id={self.class_id}>'
-    
-    def __len__(self):
-        return TO_BITS(4)
     
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.class_id)
@@ -2939,8 +2069,6 @@ class RequestClass(Rpc):
     def decode_rpc_payload(bs):
         class_id = bs.read_u32()
         return RequestClass(class_id)
-RPC.REQUEST_CLASS.decode_client_rpc_payload = RequestClass.decode_rpc_payload
-
 
 '''
 if response is 0 then all other parameters will be ignored
@@ -2957,12 +2085,6 @@ class RequestClassResponse(Rpc):
         self.weapon1 = weapon1
         self.weapon2 = weapon2
         self.weapon3 = weapon3
-
-    def __str__(self):
-        return f'<RequestClassResponse response={self.response} team={self.team} skin={self.skin.name}({self.skin.value}) pos={self.pos} rotation={self.rotation:.02f} weapon1={self.weapon1} weapon2={self.weapon2} weapon3={self.weapon3}'
-
-    def __len__(self):
-        return TO_BITS(1 if self.response == 0 else 48)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.response)
@@ -3000,17 +2122,10 @@ class RequestClassResponse(Rpc):
             weapon2 = Weapon(weapon2_id, weapon2_ammo)
             weapon3 = Weapon(weapon3_id, weapon3_ammo)
         return RequestClassResponse(response, team, skin, pos, rotation, weapon1, weapon2, weapon3)
-RPC.REQUEST_CLASS.decode_server_rpc_payload = RequestClassResponse.decode_rpc_payload
 
 class RequestSpawn(Rpc):
     def __init__(self):
         super().__init__(RPC.REQUEST_SPAWN)
-
-    def __str__(self):
-            return f'<RequestSpawn>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3018,7 +2133,6 @@ class RequestSpawn(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return RequestSpawn()
-RPC.REQUEST_SPAWN.decode_client_rpc_payload = RequestSpawn.decode_rpc_payload
 
 class REQUEST_SPAWN(enum.IntEnum):
     REJECT = 0
@@ -3030,8 +2144,8 @@ class RequestSpawnResponse(Rpc):
         super().__init__(RPC.REQUEST_SPAWN_RESPONSE)
         self.response = response
 
-    def __str__(self):
-        return f'<RequestSpawnResponse response={self.response}>'
+    #def __str__(self):
+    #    return f'<RequestSpawnResponse response={self.response}>'
 
     def __len__(self):
         return TO_BITS(1)
@@ -3043,8 +2157,6 @@ class RequestSpawnResponse(Rpc):
     def decode_rpc_payload(bs):
         response = bs.read_u8()
         return RequestSpawnResponse(response)
-RPC.REQUEST_SPAWN_RESPONSE.decode_server_rpc_payload = RequestSpawnResponse.decode_rpc_payload
-
 
 class REJECT_REASON(enum.IntEnum):
     BAD_VERSION  = 1
@@ -3057,12 +2169,6 @@ class ConnectionRejected(Rpc):
         super().__init__(RPC.CONNECTION_REJECTED)
         self.reason = REJECT_REASON(reason)
 
-    def __str__(self):
-        return f'<ConnectionRejected reason={self.reason.name}({self.reason.value})>'
-
-    def __len__(self):
-        return TO_BITS(1)
-
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.reason)
 
@@ -3070,19 +2176,11 @@ class ConnectionRejected(Rpc):
     def decode_rpc_payload(bs):
         reason = bs.read_u8()
         return ConnectionRejected(reason)
-RPC.CONNECTION_REJECTED.decode_rpc_payload = ConnectionRejected.decode_rpc_payload
-
 
 class PickedUpPickup(Rpc):
     def __init__(self, pickup_id):
         super().__init__(RPC.PICKED_UP_PICKUP)
         self.pickup_id = pickup_id
-
-    def __str__(self):
-        return f'<PickedUpPickup pickup_id={self.pickup_id}>'
-
-    def __len__(self):
-        return TO_BITS(4)
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.pickup_id)
@@ -3091,18 +2189,10 @@ class PickedUpPickup(Rpc):
     def decode_rpc_payload(bs):
         pickup_id = bs.read_u32()
         return PickedUpPickup(pickup_id)
-RPC.PICKED_UP_PICKUP.decode_rpc_payload = PickedUpPickup.decode_rpc_payload
-
 
 class MenuSelect(Rpc):
     def __init__(self):
         super().__init__(RPC.MENU_SELECT)
-
-    def __str__(self):
-        return f'<MenuSelect>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3110,18 +2200,10 @@ class MenuSelect(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return MenuSelect()
-RPC.MENU_SELECT.decode_rpc_payload = MenuSelect.decode_rpc_payload
-
 
 class SetPlayerWantedLevel(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_PLAYER_WANTED_LEVEL)
-
-    def __str__(self):
-        return f'<SetPlayerWantedLevel>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3129,7 +2211,6 @@ class SetPlayerWantedLevel(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetPlayerWantedLevel()
-RPC.SET_PLAYER_WANTED_LEVEL.decode_rpc_payload = SetPlayerWantedLevel.decode_rpc_payload
 
 '''
 The x,y coordinate is the top left coordinate for the text draw area based on a 640x480 "canvas" (irrespective of screen resolution).
@@ -3156,12 +2237,6 @@ class ShowTextdraw(Rpc):
         self.color2 = color2
         self.text = text
 
-    def __str__(self):
-        return f"<ShowTextdraw textdraw_id={self.textdraw_id} text='{self.text}' pos={self.pos} rot={self.rot} color1={self.color1:08x} color2={self.color2:08x} flags={self.flags} letter_size={self.letter_size} letter_color={self.letter_color:08x} line_size={self.line_size} box_color={self.box_color:08x} shadow={self.shadow} outline={self.outline} background_color={self.background_color:08x} style={self.style} clickable={self.clickable} model_id={self.model_id} zoom={self.zoom:.02f}>"
-
-    def __len__(self):
-        return TO_BITS(67 + len(self.text))
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
         bs.write_u8(self.flags)
@@ -3183,7 +2258,7 @@ class ShowTextdraw(Rpc):
         try:
             bs.write_dynamic_buffer_u16(encode_gxt(self.text))
         except:
-            log(f'ShowTextdraw.encode_rpc_payload: failed to encode "{self.text}"')
+            log(f'ShowTextdraw.encode: failed to encode "{self.text}"')
             bs.write_dynamic_buffer_u16('')
     
     @staticmethod
@@ -3208,22 +2283,14 @@ class ShowTextdraw(Rpc):
         try:
             text = decode_gxt(bs.read_dynamic_buffer_u16())
         except Exception as e:
-            log('ShowTextdraw.decode_rpc_payload; failed to decode; bs={bs.data.hex(" ")}')
+            log('ShowTextdraw.decode; failed to decode; bs={bs.data.hex(" ")}')
             text = ''
         return ShowTextdraw(textdraw_id, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, pos, model_id, rot, zoom, color1, color2, text)
-RPC.SHOW_TEXTDRAW.decode_rpc_payload = ShowTextdraw.decode_rpc_payload
-
 
 class HideTextdraw(Rpc):
     def __init__(self, textdraw_id):
         super().__init__(RPC.HIDE_TEXTDRAW)
         self.textdraw_id = textdraw_id
-
-    def __str__(self):
-        return f'<HideTextdraw textdraw_id={self.textdraw_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
@@ -3232,18 +2299,10 @@ class HideTextdraw(Rpc):
     def decode_rpc_payload(bs):
         textdraw_id = bs.read_u16()
         return HideTextdraw(textdraw_id)
-RPC.HIDE_TEXTDRAW.decode_rpc_payload = HideTextdraw.decode_rpc_payload
-
 
 class VehicleDestroyed(Rpc):
     def __init__(self):
         super().__init__(RPC.VEHICLE_DESTROYED)
-
-    def __str__(self):
-        return f'<VehicleDestroyed>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3251,8 +2310,6 @@ class VehicleDestroyed(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return VehicleDestroyed()
-RPC.VEHICLE_DESTROYED.decode_rpc_payload = VehicleDestroyed.decode_rpc_payload
-
 
 class ServerJoin(Rpc):
     def __init__(self, player_id, color, is_npc, player_name):
@@ -3261,12 +2318,6 @@ class ServerJoin(Rpc):
         self.color = color
         self.is_npc = is_npc
         self.player_name = player_name
-
-    def __str__(self):
-        return f"<ServerJoin player_id={self.player_id} player_name='{self.player_name}' color={self.color:08x} is_npc={self.is_npc}>"
-
-    def __len__(self):
-        return TO_BITS(7 + len(self.player_name.encode(SAMP_ENCODING)))
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -3281,8 +2332,6 @@ class ServerJoin(Rpc):
         is_npc = bs.read_u8()
         player_name = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return ServerJoin(player_id, color, is_npc, player_name)
-RPC.SERVER_JOIN.decode_rpc_payload = ServerJoin.decode_rpc_payload
-
 
 class QUIT_REASON(enum.IntEnum):
     TIMEOUT  = 0
@@ -3295,12 +2344,6 @@ class ServerQuit(Rpc):
         self.player_id = player_id
         self.reason = QUIT_REASON(reason)
 
-    def __str__(self):
-        return f'<ServerQuit player_id={self.player_id} reason={self.reason.name}({self.reason.value})>'
-
-    def __len__(self):
-        return TO_BITS(3)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
         bs.write_u8(self.reason)
@@ -3310,8 +2353,6 @@ class ServerQuit(Rpc):
         player_id = bs.read_u16()
         reason = QUIT_REASON(bs.read_u8())
         return ServerQuit(player_id, reason)
-RPC.SERVER_QUIT.decode_rpc_payload = ServerQuit.decode_rpc_payload
-
 
 class InitGame(Rpc):
     def __init__(self, zone_names, use_cj_walk, allow_weapons, limit_global_chat_radius, global_chat_radius, stunt_bonus, name_tag_draw_distance, disable_enter_exits, name_tag_los, manual_vehicle_engine_and_light, spawns_available, player_id, show_player_tags, show_player_markers, world_time, weather, gravity, lan_mode, death_drop_money, instagib, onfoot_rate, incar_rate, weapon_rate, multiplier, lag_comp, hostname, vehicle_models, vehicle_friendly_fire):
@@ -3345,12 +2386,6 @@ class InitGame(Rpc):
         self.vehicle_models = vehicle_models
         self.vehicle_friendly_fire = vehicle_friendly_fire
     
-    def __str__(self):
-        return f"<InitGame zone_names={self.zone_names} use_cj_walk={self.use_cj_walk} allow_weapons={self.allow_weapons} limit_global_chat_radius={self.limit_global_chat_radius} global_chat_radius={self.global_chat_radius:.2f} stunt_bonus={self.stunt_bonus} name_tag_draw_distance={self.name_tag_draw_distance:.2f} disable_enter_exits={self.disable_enter_exits} name_tag_los={self.name_tag_los} manual_vehicle_engine_and_light={self.manual_vehicle_engine_and_light} spawns_available={self.spawns_available} player_id={self.player_id} show_player_tags={self.show_player_tags} show_player_markers={self.show_player_markers} world_time={self.world_time} weather={self.weather} gravity={self.gravity:.5f} lan_mode={self.lan_mode} death_drop_money={self.death_drop_money} instagib={self.instagib} onfoot_rate={self.onfoot_rate} incar_rate={self.incar_rate} weapon_rate={self.weapon_rate} multiplier={self.multiplier} lag_comp={self.lag_comp} hostname='{self.hostname}' vehicle_friendly_fire={self.vehicle_friendly_fire}>"
-
-    def __len__(self):
-        return 395 + TO_BITS(1 + len(self.hostname.encode(SAMP_ENCODING)) + 212) + 32
-
     def encode_rpc_payload(self, bs):
         bs.write_bool(self.zone_names)
         bs.write_bool(self.use_cj_walk)
@@ -3420,18 +2455,10 @@ class InitGame(Rpc):
         vehicle_friendly_fire = bs.read_u32()
         
         return InitGame(zone_names, use_cj_walk, allow_weapons, limit_global_chat_radius, global_chat_radius, stunt_bonus, name_tag_draw_distance, disable_enter_exits, name_tag_los, manual_vehicle_engine_and_light, spawns_available, player_id, show_player_tags, show_player_markers, world_time, weather, gravity, lan_mode, death_drop_money, instagib, onfoot_rate, incar_rate, weapon_rate, multiplier, lag_comp, hostname, vehicle_models, vehicle_friendly_fire)
-RPC.INIT_GAME.decode_rpc_payload = InitGame.decode_rpc_payload
-
 
 class MenuQuit(Rpc):
     def __init__(self):
         super().__init__(RPC.MENU_QUIT)
-
-    def __str__(self):
-        return f'<MenuQuit>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3439,19 +2466,11 @@ class MenuQuit(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return MenuQuit()
-RPC.MENU_QUIT.decode_rpc_payload = MenuQuit.decode_rpc_payload
-
 
 class RemoveMapIcon(Rpc):
     def __init__(self, icon_id):
         super().__init__(RPC.REMOVE_MAP_ICON)
         self.icon_id = icon_id
-
-    def __str__(self):
-        return f'<RemoveMapIcon icon_id={self.icon_id}>'
-
-    def __len__(self):
-        return TO_BITS(1)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.icon_id)
@@ -3460,18 +2479,10 @@ class RemoveMapIcon(Rpc):
     def decode_rpc_payload(bs):
         icon_id = bs.read_u8()
         return RemoveMapIcon(icon_id)
-RPC.REMOVE_MAP_ICON.decode_rpc_payload = RemoveMapIcon.decode_rpc_payload
-
 
 class SetWeaponAmmo(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_WEAPON_AMMO)
-
-    def __str__(self):
-        return f'<SetWeaponAmmo>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3479,18 +2490,10 @@ class SetWeaponAmmo(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetWeaponAmmo()
-RPC.SET_WEAPON_AMMO.decode_rpc_payload = SetWeaponAmmo.decode_rpc_payload
-
 
 class SetGravity(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_GRAVITY)
-
-    def __str__(self):
-        return f'<SetGravity>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3498,20 +2501,12 @@ class SetGravity(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetGravity()
-RPC.SET_GRAVITY.decode_rpc_payload = SetGravity.decode_rpc_payload
-
 
 class SetVehicleHealth(Rpc):
     def __init__(self, vehicle_id, health):
         super().__init__(RPC.SET_VEHICLE_HEALTH)
         self.vehicle_id = vehicle_id
         self.health = health
-
-    def __str__(self):
-        return f'<SetVehicleHealth vehicle_id={self.vehicle_id} health={self.health:.02f}>'
-
-    def __len__(self):
-        return TO_BITS(6)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -3522,18 +2517,10 @@ class SetVehicleHealth(Rpc):
         vehicle_id = bs.read_u16()
         health = bs.read_float()
         return SetVehicleHealth(vehicle_id, health)
-RPC.SET_VEHICLE_HEALTH.decode_rpc_payload = SetVehicleHealth.decode_rpc_payload
-
 
 class AttachTrailerToVehicle(Rpc):
     def __init__(self):
         super().__init__(RPC.ATTACH_TRAILER_TO_VEHICLE)
-
-    def __str__(self):
-        return f'<AttachTrailerToVehicle>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3541,18 +2528,10 @@ class AttachTrailerToVehicle(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return AttachTrailerToVehicle()
-RPC.ATTACH_TRAILER_TO_VEHICLE.decode_rpc_payload = AttachTrailerToVehicle.decode_rpc_payload
-
 
 class DetachTrailerFromVehicle(Rpc):
     def __init__(self):
         super().__init__(RPC.DETACH_TRAILER_FROM_VEHICLE)
-
-    def __str__(self):
-        return f'<DetachTrailerFromVehicle>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3560,8 +2539,6 @@ class DetachTrailerFromVehicle(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return DetachTrailerFromVehicle()
-RPC.DETACH_TRAILER_FROM_VEHICLE.decode_rpc_payload = DetachTrailerFromVehicle.decode_rpc_payload
-
 
 '''
 ID  Name                    Type                                   Description (in singleplayer)
@@ -3594,12 +2571,6 @@ class SetWeather(Rpc):
         super().__init__(RPC.SET_WEATHER)
         self.weather_id = weather_id
 
-    def __str__(self):
-        return f'<SetWeather weather_id={self.weather_id}>'
-
-    def __len__(self):
-        return TO_BITS(1)
-
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.weather_id)
 
@@ -3607,20 +2578,12 @@ class SetWeather(Rpc):
     def decode_rpc_payload(bs):
         weather_id = bs.read_u8()
         return SetWeather(weather_id)
-RPC.SET_WEATHER.decode_rpc_payload = SetWeather.decode_rpc_payload
-
 
 class SetPlayerSkin(Rpc):
     def __init__(self, player_id, skin_id):
         super().__init__(RPC.SET_PLAYER_SKIN)
         self.player_id = player_id
         self.skin_id = skin_id
-
-    def __str__(self):
-        return f'<SetPlayerSkin player_id={self.player_id} skin_id={self.skin_id}>'
-
-    def __len__(self):
-        return TO_BITS(8)
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.player_id)
@@ -3631,7 +2594,6 @@ class SetPlayerSkin(Rpc):
         player_id = bs.read_u32()
         skin_id = bs.read_u32()
         return SetPlayerSkin(player_id, skin_id)
-RPC.SET_PLAYER_SKIN.decode_rpc_payload = SetPlayerSkin.decode_rpc_payload
 
 ''' S2C
 Server sends when a player exits a vehicle
@@ -3644,12 +2606,6 @@ class PlayerExitVehicle(Rpc):
         self.player_id = player_id
         self.vehicle_id = vehicle_id
 
-    def __str__(self):
-        return f'<PlayerExitVehicle player_id={self.player_id} vehicle_id={self.vehicle_id}>'
-
-    def __len__(self):
-        return TO_BITS(4)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
         bs.write_u16(self.vehicle_id)
@@ -3659,8 +2615,6 @@ class PlayerExitVehicle(Rpc):
         player_id = bs.read_u16()
         vehicle_id = bs.read_u16()
         return PlayerExitVehicle(player_id, vehicle_id)
-RPC.PLAYER_EXIT_VEHICLE.decode_server_rpc_payload = PlayerExitVehicle.decode_rpc_payload
-
 
 ''' C2S
 Client sends when it exits a vehicle
@@ -3671,12 +2625,6 @@ class ExitVehicle(Rpc):
         super().__init__(RPC.PLAYER_EXIT_VEHICLE)
         self.vehicle_id = vehicle_id
 
-    def __str__(self):
-        return f'<ExitVehicle vehicle_id={self.vehicle_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
-
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
 
@@ -3684,18 +2632,10 @@ class ExitVehicle(Rpc):
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
         return ExitVehicle(vehicle_id)
-RPC.PLAYER_EXIT_VEHICLE.decode_client_rpc_payload = ExitVehicle.decode_rpc_payload
-
 
 class RequestScoresAndPings(Rpc):
     def __init__(self):
         super().__init__(RPC.REQUEST_SCORES_AND_PINGS)
-
-    def __str__(self):
-        return f'<RequestScoresAndPings>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3703,7 +2643,6 @@ class RequestScoresAndPings(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return RequestScoresAndPings()
-RPC.REQUEST_SCORES_AND_PINGS.decode_client_rpc_payload = RequestScoresAndPings.decode_rpc_payload
 
 ''' S2C
 Response for the RequestScoresAndPings client message.
@@ -3714,12 +2653,6 @@ class RequestScoresAndPingsResponse(Rpc):
     def __init__(self, players):
         super().__init__(RPC.REQUEST_SCORES_AND_PINGS)
         self.players = players
-
-    def __str__(self):
-        s = ''
-        for player in self.players:
-            s += f'({player[0]} {player[1]} {player[2]}), '
-        return f'<RequestScoresAndPingsResponse {s}>'
 
     def __len__(self):
         return TO_BITS(10 * len(self.players))
@@ -3740,19 +2673,11 @@ class RequestScoresAndPingsResponse(Rpc):
             ping = bs.read_u32()
             players[i] = [id, score, ping]
         return RequestScoresAndPingsResponse(players)
-RPC.REQUEST_SCORES_AND_PINGS.decode_server_rpc_payload = RequestScoresAndPingsResponse.decode_rpc_payload
-
 
 class SetPlayerInterior(Rpc):
     def __init__(self, interior_id):
         super().__init__(RPC.SET_PLAYER_INTERIOR)
         self.interior_id = interior_id
-
-    def __str__(self):
-        return f'<SetPlayerInterior interior_id={self.interior_id}>'
-
-    def __len__(self):
-        return TO_BITS(1)
 
     def encode_rpc_payload(self, bs):
         bs.write_u8(self.interior_id)
@@ -3761,19 +2686,11 @@ class SetPlayerInterior(Rpc):
     def decode_rpc_payload(bs):
         interior_id = bs.read_u8()
         return SetPlayerInterior(interior_id)
-RPC.SET_PLAYER_INTERIOR.decode_rpc_payload = SetPlayerInterior.decode_rpc_payload
-
 
 class SetCameraPos(Rpc):
     def __init__(self, pos):
         super().__init__(RPC.SET_CAMERA_POS)
         self.pos = pos
-
-    def __str__(self):
-        return f'<SetCameraPos {self.pos}>'
-
-    def __len__(self):
-        return TO_BITS(12)
 
     def encode_rpc_payload(self, bs):
         bs.write_vec3(self.pos)
@@ -3782,8 +2699,6 @@ class SetCameraPos(Rpc):
     def decode_rpc_payload(bs):
         pos = bs.read_vec3()
         return SetCameraPos(pos)
-RPC.SET_CAMERA_POS.decode_rpc_payload = SetCameraPos.decode_rpc_payload
-
 
 class CAMERA_CUT(enum.IntEnum):
     MOVE = 1 # The camera position and/or target will move to its new value over time.
@@ -3795,12 +2710,6 @@ class SetCameraLookAt(Rpc):
         self.pos = pos
         self.cut_type = CAMERA_CUT(cut_type)
 
-    def __str__(self):
-        return f'<SetCameraLookAt {self.pos} cut_type={self.cut_type.name}({self.cut_type.value})>'
-
-    def __len__(self):
-        return TO_BITS(13)
-
     def encode_rpc_payload(self, bs):
         bs.write_vec3(self.pos)
         bs.write_u8(self.cut_type)
@@ -3810,20 +2719,12 @@ class SetCameraLookAt(Rpc):
         pos = bs.read_vec3()
         cut_type = bs.read_u8()
         return SetCameraLookAt(pos, cut_type)
-RPC.SET_CAMERA_LOOK_AT.decode_rpc_payload = SetCameraLookAt.decode_rpc_payload
-
 
 class SetVehiclePos(Rpc):
     def __init__(self, vehicle_id, pos):
         super().__init__(RPC.SET_VEHICLE_POS)
         self.vehicle_id = vehicle_id
         self.pos = pos
-
-    def __str__(self):
-        return f'<SetVehiclePos vehicle_id={self.vehicle_id} pos={self.pos}>'
-
-    def __len__(self):
-        return TO_BITS(14)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -3834,20 +2735,12 @@ class SetVehiclePos(Rpc):
         vehicle_id = bs.read_u16()
         pos = bs.read_vec3()
         return SetVehiclePos(vehicle_id, pos)
-RPC.SET_VEHICLE_POS.decode_rpc_payload = SetVehiclePos.decode_rpc_payload
-
 
 class SetVehicleZAngle(Rpc):
     def __init__(self, vehicle_id, angle):
         super().__init__(RPC.SET_VEHICLE_Z_ANGLE)
         self.vehicle_id = vehicle_id
         self.angle = angle
-
-    def __str__(self):
-        return f'<SetVehicleZAngle vehicle_id={self.vehicle_id} angle={self.angle:.02f}>'
-
-    def __len__(self):
-        return TO_BITS(6)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -3858,8 +2751,6 @@ class SetVehicleZAngle(Rpc):
         vehicle_id = bs.read_u16()
         angle = bs.read_float()
         return SetVehicleZAngle(vehicle_id, angle)
-RPC.SET_VEHICLE_Z_ANGLE.decode_rpc_payload = SetVehicleZAngle.decode_rpc_payload
-
 
 class SetVehicleParams(Rpc):
     def __init__(self, vehicle_id, objective, doors_locked):
@@ -3867,12 +2758,6 @@ class SetVehicleParams(Rpc):
         self.vehicle_id = vehicle_id
         self.objective = objective
         self.doors_locked = doors_locked
-
-    def __str__(self):
-        return f'<SetVehicleParams vehicle_id={self.vehicle_id} objective={self.objective} doors_locked={self.doors_locked}>'
-
-    def __len__(self):
-        return TO_BITS(4)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -3885,18 +2770,10 @@ class SetVehicleParams(Rpc):
         objective = bs.read_u8()
         doors_locked = bs.read_u8()
         return SetVehicleParams(vehicle_id, objective, doors_locked)
-RPC.SET_VEHICLE_PARAMS.decode_rpc_payload = SetVehicleParams.decode_rpc_payload
-
 
 class SetCameraBehindPlayer(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_CAMERA_BEHIND_PLAYER)
-
-    def __str__(self):
-        return f'<SetCameraBehindPlayer>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -3904,19 +2781,11 @@ class SetCameraBehindPlayer(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetCameraBehindPlayer()
-RPC.SET_CAMERA_BEHIND_PLAYER.decode_rpc_payload = SetCameraBehindPlayer.decode_rpc_payload
-
 
 class WorldPlayerRemove(Rpc):
     def __init__(self, player_id):
         super().__init__(RPC.WORLD_PLAYER_REMOVE)
         self.player_id = player_id
-
-    def __str__(self):
-        return f'<WorldPlayerRemove player_id={self.player_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(player_id)
@@ -3925,8 +2794,6 @@ class WorldPlayerRemove(Rpc):
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         return WorldPlayerRemove(player_id)
-RPC.WORLD_PLAYER_REMOVE.decode_rpc_payload = WorldPlayerRemove.decode_rpc_payload
-
 
 class WorldVehicleAdd(Rpc):
     def __init__(self, vehicle_id, model_id, pos, angle, interior_color1, interior_color2, health, interior, door_damage_status, panel_damage_status, light_damage_status, tire_damage_status, add_siren, mods, paint_job, body_color1, body_color2):
@@ -3948,12 +2815,6 @@ class WorldVehicleAdd(Rpc):
         self.paint_job = paint_job
         self.body_color1 = body_color1
         self.body_color2 = body_color2
-
-    def __str__(self):
-        return f'<WorldVehicleAdd vehicle_id={self.vehicle_id} model_id={self.model_id} pos={self.pos} angle={self.angle:.02f} interior_color1={self.interior_color1:08x} interior_color2={self.interior_color2:08x} health={self.health} interior={self.interior} door_damage_status={self.door_damage_status} panel_damage_status={self.panel_damage_status} light_damage_status={self.light_damage_status} tire_damage_status={self.tire_damage_status} add_siren={self.add_siren} mods={self.mods} paint_job={self.paint_job} body_color1={self.body_color1:08x} body_color2={self.body_color2:08x}>'
-
-    def __len__(self):
-        return TO_BITS(63)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -3995,19 +2856,11 @@ class WorldVehicleAdd(Rpc):
         body_color1 = bs.read_u32()
         body_color2 = bs.read_u32()
         return WorldVehicleAdd(vehicle_id, model_id, pos, angle, interior_color1, interior_color2, health, interior, door_damage_status, panel_damage_status, light_damage_status, tire_damage_status, add_siren, mods, paint_job, body_color1, body_color2)
-RPC.WORLD_VEHICLE_ADD.decode_rpc_payload = WorldVehicleAdd.decode_rpc_payload
-
 
 class WorldVehicleRemove(Rpc):
     def __init__(self, vehicle_id):
         super().__init__(RPC.WORLD_VEHICLE_REMOVE)
         self.vehicle_id = vehicle_id
-
-    def __str__(self):
-        return f'<WorldVehicleRemove vehicle_id={self.vehicle_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -4016,19 +2869,11 @@ class WorldVehicleRemove(Rpc):
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
         return WorldVehicleRemove(vehicle_id)
-RPC.WORLD_VEHICLE_REMOVE.decode_rpc_payload = WorldVehicleRemove.decode_rpc_payload
-
 
 class DeathBroadcast(Rpc):
     def __init__(self, player_id):
         super().__init__(RPC.DEATH_BROADCAST)
         self.player_id = player_id
-
-    def __str__(self):
-        return f'<DeathBroadcast player_id={self.player_id}>'
-
-    def __len__(self):
-        return TO_BITS(2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -4037,20 +2882,12 @@ class DeathBroadcast(Rpc):
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         return DeathBroadcast(player_id)
-RPC.DEATH_BROADCAST.decode_rpc_payload = DeathBroadcast.decode_rpc_payload
-
 
 class ToggleVehicleCollisions(Rpc):
     def __init__(self, enable):
         super().__init__(RPC.TOGGLE_VEHICLE_COLLISIONS)
         self.enable = enable
     
-    def __str__(self):
-        return f'<ToggleVehicleCollisions enable={self.enable}>'
-
-    def __len__(self):
-        return 1
-
     def encode_rpc_payload(self, bs):
         bs.write_bool(self.enable)
 
@@ -4058,18 +2895,10 @@ class ToggleVehicleCollisions(Rpc):
     def decode_rpc_payload(bs):
         enable = bs.read_bool()
         return ToggleVehicleCollisions(enable)
-RPC.TOGGLE_VEHICLE_COLLISIONS.decode_rpc_payload = ToggleVehicleCollisions.decode_rpc_payload
-
 
 class CameraTarget(Rpc):
     def __init__(self):
         super().__init__(RPC.CAMERA_TARGET)
-
-    def __str__(self):
-        return f'<CameraTarget>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4077,18 +2906,10 @@ class CameraTarget(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return CameraTarget()
-RPC.CAMERA_TARGET.decode_rpc_payload = CameraTarget.decode_rpc_payload
-
 
 class ShowActor(Rpc):
     def __init__(self):
         super().__init__(RPC.SHOW_ACTOR)
-
-    def __str__(self):
-        return f'<ShowActor>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4096,18 +2917,10 @@ class ShowActor(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ShowActor()
-RPC.SHOW_ACTOR.decode_rpc_payload = ShowActor.decode_rpc_payload
-
 
 class HideActor(Rpc):
     def __init__(self):
         super().__init__(RPC.HIDE_ACTOR)
-
-    def __str__(self):
-        return f'<HideActor>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4115,18 +2928,10 @@ class HideActor(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return HideActor()
-RPC.HIDE_ACTOR.decode_rpc_payload = HideActor.decode_rpc_payload
-
 
 class ApplyActorAnimation(Rpc):
     def __init__(self):
         super().__init__(RPC.APPLY_ACTOR_ANIMATION)
-
-    def __str__(self):
-        return f'<ApplyActorAnimation>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4134,18 +2939,10 @@ class ApplyActorAnimation(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ApplyActorAnimation()
-RPC.APPLY_ACTOR_ANIMATION.decode_rpc_payload = ApplyActorAnimation.decode_rpc_payload
-
 
 class ClearActorAnimation(Rpc):
     def __init__(self):
         super().__init__(RPC.CLEAR_ACTOR_ANIMATION)
-
-    def __str__(self):
-        return f'<ClearActorAnimation>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4153,18 +2950,10 @@ class ClearActorAnimation(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return ClearActorAnimation()
-RPC.CLEAR_ACTOR_ANIMATION.decode_rpc_payload = ClearActorAnimation.decode_rpc_payload
-
 
 class SetActorFacingAngle(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_ACTOR_FACING_ANGLE)
-
-    def __str__(self):
-        return f'<SetActorFacingAngle>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4172,18 +2961,10 @@ class SetActorFacingAngle(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetActorFacingAngle()
-RPC.SET_ACTOR_FACING_ANGLE.decode_rpc_payload = SetActorFacingAngle.decode_rpc_payload
-
 
 class SetActorPos(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_ACTOR_POS)
-
-    def __str__(self):
-        return f'<SetActorPos>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4191,18 +2972,10 @@ class SetActorPos(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetActorPos()
-RPC.SET_ACTOR_POS.decode_rpc_payload = SetActorPos.decode_rpc_payload
-
 
 class SetActorHealth(Rpc):
     def __init__(self):
         super().__init__(RPC.SET_ACTOR_HEALTH)
-
-    def __str__(self):
-        return f'<SetActorHealth>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4210,18 +2983,10 @@ class SetActorHealth(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return SetActorHealth()
-RPC.SET_ACTOR_HEALTH.decode_rpc_payload = SetActorHealth.decode_rpc_payload
-
 
 class EnablePlayerCameraTarget(Rpc):
     def __init__(self):
         super().__init__(RPC.ENABLE_PLAYER_CAMERA_TARGET)
-
-    def __str__(self):
-        return f'<EnablePlayerCameraTarget>'
-
-    def __len__(self):
-        return 0
 
     def encode_rpc_payload(self, bs):
         pass
@@ -4229,21 +2994,17 @@ class EnablePlayerCameraTarget(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         return EnablePlayerCameraTarget()
-RPC.ENABLE_PLAYER_CAMERA_TARGET.decode_rpc_payload = EnablePlayerCameraTarget.decode_rpc_payload
 
-
-'''
-Usually most RPCs are only sent by either the client or server. And when it is
-sent by both the RPC may have the same payload structure. In these cases we
-define only "RPC.[RPC_NAME].decode_rpc_payload" to the static decoder function
-of the specific Rpc class. However raknet.Rpc doesn't call
-"RPC.[RPC_NAME].decode_rpc_payload", it only calls decode_client_rpc_payload or
-decode_server_rpc_payload; so in this for loop we set both these members to 
-decode_rpc_payload.
-'''
+import inspect
+module = inspect.getmodule(inspect.currentframe())
 for rpc in RPC:
+    # get SomeSampRpc class from RPC.SOME_SAMP_RPC
+    class_name = ''.join(w.capitalize() for w in rpc.name.split('_'))
     try:
-        rpc.decode_client_rpc_payload = rpc.decode_rpc_payload
-        rpc.decode_server_rpc_payload = rpc.decode_rpc_payload
+        rpc_class = getattr(module, class_name)
+        if rpc.__dict__.get('decode_client_rpc_payload') == None and rpc.__dict__.get('decode_server_rpc_payload') == None:
+            rpc.decode_client_rpc_payload = rpc.decode_server_rpc_payload = rpc_class.decode_rpc_payload
+        else:
+            pass # already defined means an RPC with different definitions if from client or server
     except AttributeError:
-        pass
+        continue

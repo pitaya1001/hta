@@ -158,6 +158,22 @@ def get_time():
     kernel32.QueryPerformanceCounter(ctypes.byref(timestamp))
     return int(timestamp.value * 1000 / perf_frequency.value)
 
+def pretty_format(self, skip_n):
+    s = f'<{self.__class__.__name__}'
+    for var, value in list(self.__dict__.items())[skip_n:]:
+        if type(value) == float:
+            s += f' {var}={value:.2f}'
+        elif type(value) == str:
+            s += f' {var}={repr(value)}'
+        elif type(value) == bytearray or type(var) == bytes:
+            s += f' {var}=[{value.hex(" ")}]'
+        elif type(value) == RELIABILITY:
+            s += f' {var}={value.name}'
+        else:
+            s += f' {var}={value}'
+    s += '>'
+    return s
+
 class InternalPacket:
     def __init__(self, sequence_number, reliability, ordering_channel, ordering_index, split_id=None, split_index=None, split_count=None, payload=b''):
         self.sequence_number = sequence_number
@@ -170,7 +186,7 @@ class InternalPacket:
         self.payload = payload
     
     def __str__(self):
-        return f'<InternalPacket #{self.sequence_number} {self.reliability.name} ordering_channel={self.ordering_channel} ordering_index={self.ordering_index} split_id={self.split_id} split_index={self.split_index} split_count={self.split_count} payload={self.payload.hex(" ")}>'
+        return pretty_format(self, 0)
     
     def encode(self, bs):
         # encode sequence number
@@ -240,7 +256,7 @@ class Message:
         self.id = id
     
     def __str__(self):
-        return f'<Message>'
+        return pretty_format(self, 1)
     
     def encode_header(self):
         return self.id.to_bytes(1, 'little')
@@ -294,28 +310,20 @@ class Rpc(Message):
         super().__init__(MSG.RPC)
         self.rpc_id = rpc_id
     
-    # retuns how many bits are required to encode the rpc payload
-    def __len__(self):
-        return 0
-    
-    # returns a string representation of the RPC
     def __str__(self):
-        return f'<Rpc id={self.rpc_id.name}>'
-    
-    def encode_rpc_payload(self, bs):
-        pass
-    
-    @staticmethod
-    def decode_rpc_payload(bs):
-        pass
-    
+        return pretty_format(self, 2)
+
     # encode message payload
     def encode_payload(self):
-        payload_size = len(self)
-        bs = Bitstream(capacity=1+4+TO_BYTES(payload_size))
+        # encode rpc payload
+        payload_bs = Bitstream(capacity=64)
+        self.encode_rpc_payload(payload_bs)
+        # encode rpc header
+        bs = Bitstream(capacity=64)
         bs.write_u8(self.rpc_id)
-        bs.write_compressed_u32(payload_size)
-        self.encode_rpc_payload(bs)
+        bs.write_compressed_u32(payload_bs.len)
+        # copy rpc payload
+        bs.write_bits(payload_bs.data, payload_bs.len)
         return bs.data[:TO_BYTES(bs.len)]
     
     # decode message payload
@@ -344,7 +352,6 @@ class Rpc(Message):
             raise Exception('bad rpc: invalid size')
         
         return rpc_id, bs
-MSG.RPC.encode_payload = Rpc.encode_payload
 MSG.RPC.decode_client_payload = Rpc.decode_client_payload
 MSG.RPC.decode_server_payload = Rpc.decode_server_payload
 
@@ -353,9 +360,6 @@ class OpenConnectionRequest(Message):
         super().__init__(MSG.OPEN_CONNECTION_REQUEST)
         self.cookie = cookie
     
-    def __str__(self):
-        return f'<OpenConnectionRequest cookie={self.cookie:x}>'
-    
     def encode_payload(self):
         return struct.pack('<H', self.cookie)
     
@@ -363,16 +367,11 @@ class OpenConnectionRequest(Message):
     def decode_payload(data):
         cookie, = struct.unpack('<H', data)
         return OpenConnectionRequest(cookie)
-MSG.OPEN_CONNECTION_REQUEST.encode_payload = OpenConnectionRequest.encode_payload
-MSG.OPEN_CONNECTION_REQUEST.decode_payload = OpenConnectionRequest.decode_payload
-    
+
 class OpenConnectionCookie(Message):
     def __init__(self, cookie):
         super().__init__(MSG.OPEN_CONNECTION_COOKIE)
         self.cookie = cookie
-    
-    def __str__(self):
-        return f'<OpenConnectionCookie cookie={self.cookie:x}>'
     
     def encode_payload(self):
         return struct.pack('<H', self.cookie)
@@ -381,15 +380,10 @@ class OpenConnectionCookie(Message):
     def decode_payload(data):
         cookie, = struct.unpack('<H', data)
         return OpenConnectionCookie(cookie)
-MSG.OPEN_CONNECTION_COOKIE.encode_payload = OpenConnectionCookie.encode_payload
-MSG.OPEN_CONNECTION_COOKIE.decode_payload = OpenConnectionCookie.decode_payload
 
 class OpenConnectionReply(Message):
     def __init__(self):
         super().__init__(MSG.OPEN_CONNECTION_REPLY)
-    
-    def __str__(self):
-        return f'<OpenConnectionReply>'
     
     def encode_payload(self):
         return b'\x00'
@@ -397,17 +391,12 @@ class OpenConnectionReply(Message):
     @staticmethod
     def decode_payload(data):
         return OpenConnectionReply()
-MSG.OPEN_CONNECTION_REPLY.encode_payload = OpenConnectionReply.encode_payload
-MSG.OPEN_CONNECTION_REPLY.decode_payload = OpenConnectionReply.decode_payload
 
 class NewIncomingConnection(Message):
     def __init__(self, ip, port):
         super().__init__(MSG.NEW_INCOMING_CONNECTION)
         self.ip = ip
         self.port = port
-    
-    def __str__(self):
-        return f'<NewIncomingConnection ip={self.ip} port={self.port}>'
     
     def encode_payload(self):
         return socket.inet_aton(self.ip) + self.port.to_bytes(2, 'little')
@@ -417,16 +406,11 @@ class NewIncomingConnection(Message):
         ip = socket.inet_ntoa(data[:4])
         port, = struct.unpack_from('<H', data, 4)
         return NewIncomingConnection(ip, port)
-MSG.NEW_INCOMING_CONNECTION.encode_payload = NewIncomingConnection.encode_payload
-MSG.NEW_INCOMING_CONNECTION.decode_payload = NewIncomingConnection.decode_payload
 
 class ConnectionRequest(Message):
     def __init__(self, password):
         super().__init__(MSG.CONNECTION_REQUEST)
         self.password = password
-    
-    def __str__(self):
-        return f'<ConnectionRequest password="{self.password}">'
     
     def encode_payload(self):
         return self.password.encode(SAMP_ENCODING)
@@ -435,8 +419,6 @@ class ConnectionRequest(Message):
     def decode_payload(data):
         password = data.decode(SAMP_ENCODING)
         return ConnectionRequest(password)
-MSG.CONNECTION_REQUEST.encode_payload = ConnectionRequest.encode_payload
-MSG.CONNECTION_REQUEST.decode_payload = ConnectionRequest.decode_payload
 
 class ConnectionRequestAccepted(Message):
     def __init__(self, ip, port, player_id, cookie):
@@ -446,9 +428,6 @@ class ConnectionRequestAccepted(Message):
         self.player_id = player_id
         self.cookie = cookie
     
-    def __str__(self):
-        return f'<ConnectionRequestAccepted ip={self.ip} port={self.port} player_id={self.player_id} cookie={self.cookie:x}>'
-    
     def encode_payload(self):
         return socket.inet_aton(self.ip) + struct.pack('HHI', self.port, self.player_id, self.cookie)
 
@@ -457,16 +436,11 @@ class ConnectionRequestAccepted(Message):
         ip = socket.inet_ntoa(data[:4])
         port, player_id, cookie = struct.unpack_from('<HHI', data, 4)
         return ConnectionRequestAccepted(ip, port, player_id, cookie)
-MSG.CONNECTION_REQUEST_ACCEPTED.encode_payload = ConnectionRequestAccepted.encode_payload
-MSG.CONNECTION_REQUEST_ACCEPTED.decode_payload = ConnectionRequestAccepted.decode_payload
 
 class InternalPing(Message):
     def __init__(self, time):
         super().__init__(MSG.INTERNAL_PING)
         self.time = time
-    
-    def __str__(self):
-        return f'<InternalPing time={self.time}>'
     
     def encode_payload(self):
         return struct.pack('<I', self.time)
@@ -475,17 +449,12 @@ class InternalPing(Message):
     def decode_payload(data):
         ping_time, = struct.unpack_from('<I', data)
         return InternalPing(ping_time)
-MSG.INTERNAL_PING.encode_payload = InternalPing.encode_payload
-MSG.INTERNAL_PING.decode_payload = InternalPing.decode_payload
 
 class ConnectedPong(Message):
     def __init__(self, ping_time, pong_time):
         super().__init__(MSG.CONNECTED_PONG)
         self.ping_time = ping_time
         self.pong_time = pong_time
-    
-    def __str__(self):
-        return f'<ConnectedPong ping_time={self.ping_time} pong_time={self.pong_time}>'
     
     def encode_payload(self):
         return struct.pack('<II', self.ping_time, self.pong_time)
@@ -494,16 +463,19 @@ class ConnectedPong(Message):
     def decode_payload(data):
         ping_time, pong_time = struct.unpack_from('<II', data)
         return ConnectedPong(ping_time, pong_time)
-MSG.CONNECTED_PONG.encode_payload = ConnectedPong.encode_payload
-MSG.CONNECTED_PONG.decode_payload = ConnectedPong.decode_payload
+
+class Timestamp(Message):
+    def __init__(self):
+        super().__init__(MSG.TIMESTAMP)
+    
+    @staticmethod
+    def decode_payload(data):
+        return Timestamp()
 
 class ReceivedStaticData(Message):
     def __init__(self, local_static_data):
         super().__init__(MSG.RECEIVED_STATIC_DATA)
         self.local_static_data = local_static_data
-    
-    def __str__(self):
-        return f'<ReceivedStaticData local_static_data={self.local_static_data.hex(" ")}>'
     
     def encode_payload(self):
         return self.local_static_data
@@ -512,15 +484,10 @@ class ReceivedStaticData(Message):
     def decode_payload(data):
         local_static_data = data
         return ReceivedStaticData(local_static_data)
-MSG.RECEIVED_STATIC_DATA.encode_payload = ReceivedStaticData.encode_payload
-MSG.RECEIVED_STATIC_DATA.decode_payload = ReceivedStaticData.decode_payload
 
 class DetectLostConnections(Message):
     def __init__(self):
         super().__init__(MSG.DETECT_LOST_CONNECTIONS)
-    
-    def __str__(self):
-        return f'<DetectLostConnections>'
     
     def encode_payload(self):
         return b''
@@ -528,16 +495,11 @@ class DetectLostConnections(Message):
     @staticmethod
     def decode_payload(data):
         return DetectLostConnections()
-MSG.DETECT_LOST_CONNECTIONS.encode_payload = DetectLostConnections.encode_payload
-MSG.DETECT_LOST_CONNECTIONS.decode_payload = DetectLostConnections.decode_payload
 
 class AuthKey(Message):
     def __init__(self, key):
         super().__init__(MSG.AUTH_KEY)
         self.key = key
-    
-    def __str__(self):
-        return f'<AuthKey key={self.key.hex(" ")}>'
     
     def encode_payload(self):
         return len(self.key).to_bytes(1, 'little') + self.key
@@ -547,8 +509,6 @@ class AuthKey(Message):
         key_size = data[0]
         key = data[1:1+key_size]
         return AuthKey(key)
-MSG.AUTH_KEY.encode_payload = AuthKey.encode_payload
-MSG.AUTH_KEY.decode_payload = AuthKey.decode_payload
 
 '''
 The client sees the message "Server closed the connection." when the server sends
@@ -557,17 +517,12 @@ class DisconnectionNotification(Message):
     def __init__(self):
         super().__init__(MSG.DISCONNECTION_NOTIFICATION)
     
-    def __str__(self):
-        return f'<DisconnectionNotification>'
-    
     def encode_payload(self):
         return b''
 
     @staticmethod
     def decode_payload(data):
         return DisconnectionNotification()
-MSG.DISCONNECTION_NOTIFICATION.encode_payload = DisconnectionNotification.encode_payload
-MSG.DISCONNECTION_NOTIFICATION.decode_payload = DisconnectionNotification.decode_payload
 
 class RemoteNewIncomingConnection(Message):
     def __init__(self, ip, port, player_id):
@@ -575,9 +530,6 @@ class RemoteNewIncomingConnection(Message):
         self.ip = ip
         self.port = port
         self.player_id = player_id
-    
-    def __str__(self):
-        return f'<RemoteNewIncomingConnection {self.ip}:{self.port} @ {self.player_id}>'
     
     def encode_payload(self):
         return socket.inet_aton(self.ip) + struct.pack('HH', self.port, self.player_id)
@@ -587,8 +539,6 @@ class RemoteNewIncomingConnection(Message):
         ip = socket.inet_ntoa(data[:4])
         port, player_id = struct.unpack_from('<HH', data, 4)
         return RemoteNewIncomingConnection(ip, port, player_id)
-MSG.REMOTE_NEW_INCOMING_CONNECTION.encode_payload = RemoteNewIncomingConnection.encode_payload
-MSG.REMOTE_NEW_INCOMING_CONNECTION.decode_payload = RemoteNewIncomingConnection.decode_payload
 
 class RemoteExistingConnection(Message):
     def __init__(self, ip, port, player_id):
@@ -596,9 +546,6 @@ class RemoteExistingConnection(Message):
         self.ip = ip
         self.port = port
         self.player_id = player_id
-    
-    def __str__(self):
-        return f'<RemoteExistingConnection {self.ip}:{self.port} @ {self.player_id}>'
     
     def encode_payload(self):
         return socket.inet_aton(self.ip) + struct.pack('HH', self.port, self.player_id)
@@ -608,15 +555,10 @@ class RemoteExistingConnection(Message):
         ip = socket.inet_ntoa(data[:4])
         port, player_id = struct.unpack_from('<HH', data, 4)
         return RemoteExistingConnection(ip, port, player_id)
-MSG.REMOTE_EXISTING_CONNECTION.encode_payload = RemoteExistingConnection.encode_payload
-MSG.REMOTE_EXISTING_CONNECTION.decode_payload = RemoteExistingConnection.decode_payload
 
 class ConnectionBanned(Message):
     def __init__(self):
         super().__init__(MSG.CONNECTION_BANNED)
-    
-    def __str__(self):
-        return f'<ConnectionBanned>'
     
     def encode_payload(self):
         return b''
@@ -624,21 +566,31 @@ class ConnectionBanned(Message):
     @staticmethod
     def decode_payload(data):
         return ConnectionBanned()
-MSG.CONNECTION_BANNED.encode_payload = ConnectionBanned.encode_payload
-MSG.CONNECTION_BANNED.decode_payload = ConnectionBanned.decode_payload
 
-
-for message in MSG:
+from .messages import *
+import inspect
+module = inspect.getmodule(inspect.currentframe())
+for msg in MSG:
+    # get SomeRaknetMessage class from MSG.SOME_RAKNET_MESSAGE
+    class_name = ''.join(w.capitalize() for w in msg.name.split('_'))
     try:
-        message.encode_client_payload = message.encode_payload
-        message.encode_server_payload = message.encode_payload
+        msg_class = getattr(module, class_name)
+        
+        if msg_class.__dict__.get('encode_payload') != None:
+            msg.encode_client_payload = msg_class.encode_payload
+            msg.encode_server_payload = msg_class.encode_payload
+        
+        if msg_class.__dict__.get('decode_payload') != None:
+            msg.decode_client_payload = msg_class.decode_payload
+            msg.decode_server_payload = msg_class.decode_payload
+        else:
+            if msg_class.__dict__.get('decode_client_payload') != None:
+                msg.decode_client_payload = msg_class.decode_client_payload
+            if msg_class.__dict__.get('decode_server_payload') != None:
+                msg.decode_server_payload = msg_class.decode_server_payload
+        
     except AttributeError:
-        pass
-    try:
-        message.decode_client_payload = message.decode_payload
-        message.decode_server_payload = message.decode_payload
-    except AttributeError:
-        pass
+        continue
 
 class BadAck(Exception):
     pass
