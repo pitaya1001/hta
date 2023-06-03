@@ -185,29 +185,31 @@ class Bitstream:
         self.read_offset += bit_count
     
     def read_u8(self):
-        b = bytearray(1)
-        self.read_bits(b, 8)
-        return b[0]
+        return struct.unpack('B', self.read_buffer(8))[0]
+    
+    def read_i8(self):
+        return struct.unpack('b', self.read_buffer(8))[0]
     
     def read_u16(self):
-        b = bytearray(2)
-        self.read_bits(b, 16)
-        return (b[1]<<8) | b[0]
+        return struct.unpack('H', self.read_buffer(16))[0]
+    
+    def read_i16(self):
+        return struct.unpack('h', self.read_buffer(16))[0]
     
     def read_u32(self):
-        b = bytearray(4)
-        self.read_bits(b, 32)
-        return (b[3]<<24) | (b[2]<<16) | (b[1]<<8) | b[0]
+        return struct.unpack('I', self.read_buffer(32))[0]
+    
+    def read_i32(self):
+        return struct.unpack('i', self.read_buffer(32))[0]
     
     def read_u64(self):
-        b = bytearray(8)
-        self.read_bits(b, 64)
-        return (b[7]<<56) | (b[6]<<48) | (b[5]<<40) | (b[4]<<32) | (b[3]<<24) | (b[2]<<16) | (b[1]<<8) | b[0]
+        return struct.unpack('Q', self.read_buffer(64))[0]
+    
+    def read_i64(self):
+        return struct.unpack('q', self.read_buffer(64))[0]
     
     def read_float(self):
-        float = bytearray(4)
-        self.read_bits(float, 32)
-        return struct.unpack('<f', float)[0]
+        return struct.unpack('f', self.read_buffer(32))[0]
     
     # 00 00 00 20
     # 1 1 1 + bin(20h)
@@ -358,26 +360,31 @@ class Bitstream:
         self.update_len()
     
     def write_u8(self, n):
-        b = bytearray(1)
-        b[0] = n
-        self.write_bits(b, 8)
+        self.write_bits(struct.pack('B', n), 8)
+    
+    def write_i8(self, n):
+        self.write_bits(struct.pack('b', n), 8)
     
     def write_u16(self, n):
-        b = bytearray(2)
-        b[0] = n & 0xff
-        b[1] = n >> 8
-        self.write_bits(b, 16)
+        self.write_bits(struct.pack('H', n), 16)
+        
+    def write_i16(self, n):
+        self.write_bits(struct.pack('h', n), 16)
         
     def write_u32(self, n):
-        b = bytearray(4)
-        b[0] = n & 0xff
-        b[1] = (n >>  8) & 0xff
-        b[2] = (n >> 16) & 0xff
-        b[3] = (n >> 24) & 0xff
-        self.write_bits(b, 32)
+        self.write_bits(struct.pack('I', n), 32)
+    
+    def write_i32(self, n):
+        self.write_bits(struct.pack('i', n), 32)
+    
+    def write_u64(self, n):
+        self.write_bits(struct.pack('Q', n), 32)
+    
+    def write_i64(self, n):
+        self.write_bits(struct.pack('q', n), 32)
     
     def write_float(self, float):
-        self.write_bits(struct.pack('<f', float), 32)
+        self.write_bits(struct.pack('f', float), 32)
     
     def write_compressed(self, b):
         i = len(b) - 1
