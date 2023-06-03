@@ -85,7 +85,6 @@ class Client(Player):
             log(traceback.format_exc())
 
     def on_connected_message(self, message, internal_packet, peer):
-        #print('Client.on_connected_message', message, peer)
         for callback in self.message_callbacks:
             if callback(message, internal_packet, peer, self) == True:
                 break
@@ -107,7 +106,6 @@ class Client(Player):
         self.connection_cookie_task = asyncio.get_running_loop().create_task(self.retry_connection_cookie(random.uniform(1.0, 3.0)))
     
     def on_unconnected_message(self, message, peer):
-        #print('Client.on_unconnected_message', message, peer)
         if message.id == MSG.OPEN_CONNECTION_COOKIE: # server sent us the encoded server cookie
             # calculate the secret cookie from it
             self.server_cookie = message.cookie ^ MAGIC_COOKIE
