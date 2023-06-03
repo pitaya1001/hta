@@ -29,6 +29,8 @@ class DriverSync(Message):
         if self.extra != None:
             self.train_speed = self.bike_inclination = struct.unpack('f', extra)[0]
             self.hydra_thrust_angle = struct.unpack('I', extra)[0]
+        else:
+            self.train_speed = self.bike_inclination = self.hydra_thrust_angle = None
 
     def __str__(self):
         return f'<DriverSync driver_id={self.driver_id} vehicle_id={self.vehicle_id} lr_keys={self.lr_keys} ud_keys={self.ud_keys} keys={self.keys} dir={self.dir} pos={self.pos} velocity={self.velocity} vehicle_health={self.vehicle_health:.02f} driver_health={self.driver_health:.2f} driver_armor={self.driver_armor:.02f} driver_weapon_id={self.driver_weapon_id} additional_key={self.additional_key} siren={self.siren} landing_gear={self.landing_gear} trailer_id={self.trailer_id}' + (f'extra(train_speed=bike_inclination={self.train_speed:.02f}; hydra_thrust_angle={self.hydra_thrust_angle})>' if (self.extra != None) else '')
