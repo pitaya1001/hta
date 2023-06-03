@@ -16,8 +16,8 @@ All raknet packets(from unconnected peers) have exactly one message at the start
  A peer becomes connected after the server send an OpenConnectionReply message
 
 All raknet packets(from connected peers) have two parts(in this order):
- 1. reliable message acknowlegements
- 2. zero or more internal packets(see the InternalPacket class for more details)
+ 1. reliable message acknowlegements(see Acknowledgments)
+ 2. zero or more internal packets(see InternalPacket)
 
 An internal packet has a whole message or part of a split message
 
@@ -32,6 +32,10 @@ Client.NewIncomingConnection
 Client.ClientJoin
 
 Client.DisconnectNotification when disconnecting from a server
+
+TODO:
+ check if acknowledgments will fit before encoding all of them
+ implement resend reliable messages
 '''
 
 from .bitstream import *
@@ -78,8 +82,8 @@ class MSG(enum.IntEnum):
     REMOTE_STATIC_DATA                = 46  # 0x2e
     ADVERTISE_SYSTEM                  = 55  # 0x37
 
-    # samp message ids
     DRIVER_SYNC    = 200  # 0xc8
+    # samp message identifiers
     RCON_COMMAND    = 201  # 0xc9
     RCON_RESPONSE   = 202  # 0xca
     AIM_SYNC        = 203  # 0xcb
@@ -104,10 +108,10 @@ class PRIORITY(enum.IntEnum):
 NUMBER_OF_PRIORITIES = len(PRIORITY)
 
 ''' raknet reliability constants
-RELIABLE messages require the remote peer to acknowledge that it was received; if they do not the message is sent again
-UNRELIABLE messages do not use acknowledgments
-SEQUENCED messages use an ordering index; if we receive a message with ordering index X and later receive a message with ordering index X-1 we drop it because we only care about the most up to date sequenced message
-ORDERED messaged are delivered in the exact same order as they were pushed
+RELIABLE: messages require the remote peer to acknowledge that it was received; if they do not the message is sent again
+UNRELIABLE: messages do not use acknowledgments
+SEQUENCED: messages use an ordering index; if we receive a message with ordering index X and later receive a message with ordering index X-1 we drop it because we only care about the most recent sequenced message
+ORDERED: messages are delivered in the exact same order as they were pushed
 '''
 class RELIABILITY(enum.IntEnum):
     UNRELIABLE           = 6
@@ -193,18 +197,18 @@ class InternalPacket:
             bs.write_compressed_u32(self.split_index)
             bs.write_compressed_u32(self.split_count)
         
-        # encode packet payload size
+        # encode payload size
         bs.write_compressed_u16(TO_BITS(len(self.payload)))
         
-        # copy packet payload
+        # copy payload
         bs.write_aligned(self.payload)
     
     @staticmethod
     def decode(bs):
         # decode sequence number
-        number = bs.read_u16()
+        sequence_number = bs.read_u16()
         
-        # decode packet reliability
+        # decode reliability
         reliability = RELIABILITY(bs.read_bits_num(4)) # the enum should raise an exception if the reliability is invalid
         if reliability.sequenced() or reliability.ordered():
             ordering_channel = bs.read_bits_num(5)
@@ -227,12 +231,12 @@ class InternalPacket:
             split_index = None
             split_count = None
         
-        # decode packet payload size
+        # decode payload size
         payload_size = TO_BYTES(bs.read_compressed_u16())
         if payload_size > 1500:
             raise Exception('packet payload too big')
         
-        # copy packet payload
+        # copy payload
         payload = bytearray(payload_size)
         bs.read_aligned(payload, payload_size)
         
@@ -265,6 +269,7 @@ class Message:
             raise e
     
     # in case they are the same
+    # note: derived Rpc classes override this
     def encode(self):
         return self.encode_header() + self.encode_payload()
     
