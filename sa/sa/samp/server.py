@@ -320,7 +320,6 @@ class Server:
         peer = Peer(addr, is_server_peer=False, sendto=lambda buffer: self.socket.sendto(buffer, addr))
         peer.connected = True
         peer.expected_client_key = None
-        #peer.unconnected_message_callbacks.append(self.on_unconnected_message)
         peer.connected_message_callbacks.append(self.on_connected_message)
         
         id = self.get_unused_id(self)
@@ -361,7 +360,6 @@ class Server:
             except:
                 addrs = None
             
-            #print('C',Message.decode_from_client(data))
             # handle initial raknet open connection request using cached response
             if data[0] == MSG.OPEN_CONNECTION_REQUEST:
                 if data[1:3] == self.expected_raknet_cookie: # challenge passed; grant access
@@ -370,8 +368,6 @@ class Server:
                 else: # wrong answer; try again
                     output = self.cached_open_connection_cookie
                 self.socket.sendto(output, addr)
-                #print('C',Message.decode_from_client(data))
-                #print('S',Message.decode_from_server(output))
     
     def init_game_for_player(self, peer):
         rpc = InitGame(
