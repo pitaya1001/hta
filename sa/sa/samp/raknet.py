@@ -177,15 +177,9 @@ class InternalPacket:
         # encode sequence number
         bs.write_u16(self.sequence_number)
         
-        # encode packet reliability
-        reliability_byte = bytearray(1)
-        reliability_byte[0] = self.reliability << 4
-        bs.write_bits(reliability_byte, 4)
-        #bs.write_bits_num(self.reliability, 4)
+        # encode reliability
+        bs.write_bits_num(self.reliability, 4)
         if self.reliability.sequenced() or self.reliability.ordered():
-            #ordering_channel_byte = bytearray(1)
-            #ordering_channel_byte[0] = self.ordering_channel << 3
-            #bs.write_bits(ordering_channel_byte, 5)
             bs.write_bits_num(self.ordering_channel, 5)
             bs.write_u16(self.ordering_index)
         
