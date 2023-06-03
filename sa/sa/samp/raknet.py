@@ -167,8 +167,8 @@ def pretty_format(self, skip_n):
             s += f' {var}={repr(value)}'
         elif type(value) == bytearray or type(var) == bytes:
             s += f' {var}=[{value.hex(" ")}]'
-        elif type(value) == RELIABILITY:
-            s += f' {var}={value.name}'
+        elif isinstance(value, enum.Enum):
+            s += f' {var}={value.name}({value.value})'
         else:
             s += f' {var}={value}'
     s += '>'
