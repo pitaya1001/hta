@@ -426,7 +426,7 @@ class Server:
                             peer.push_message(ServerJoin(p.player.id, p.player.color, is_npc=False, player_name=p.player.name))
                     
                     # tell all peers a new player connected
-                    self.push_message_to_others(peer, ServerJoin(peer.player.id, peer.player.color, is_npc=False, player_name=peer.player.name))
+                    self.push_message_to_others(peer, ServerJoin(peer.player.id, peer.player.name, peer.player.color, is_npc=False,))
                 else:
                     # todo: kick player?
                     pass
