@@ -94,9 +94,6 @@ def copy_bits(i, o, n, io, oo):
         # or bits
         o[obi + j] |= (byte << obr)
 
-class BitstreamTooSmall(Exception):
-    pass
-
 class Bitstream:
     def __init__(self, data=None, data_len_in_bits=0, capacity=0):
         maximum_data_len_in_bits = len(data) * 8 if data else 0
@@ -160,8 +157,6 @@ class Bitstream:
         return self.len - self.read_offset
     
     def read_bit(self):
-        if self.read_offset + 1 > self.len:
-            raise BitstreamTooSmall
         bit = (self.data[self.read_offset // 8] >> (7 - self.read_offset % 8)) & 1
         self.read_offset += 1
         return bit
@@ -173,8 +168,6 @@ class Bitstream:
     # n: number of bits to read from the Bitstream
     # oo(in bits) output offset in the dst bytearray to write the data to
     def read_bits(self, o, n, oo=0):
-        if self.read_offset + n > self.len:
-            raise BitstreamTooSmall
         copy_bits(self.data, o, n, self.read_offset, oo)
         self.read_offset += n
     
@@ -187,8 +180,6 @@ class Bitstream:
     def read_aligned(self, o, byte_count):
         bit_count = byte_count * 8
         self.align_read_to_byte_boundary()
-        if self.read_offset + bit_count > self.len:
-            raise BitstreamTooSmall
         for j in range(byte_count):
             o[j] = self.data[(self.read_offset // 8) + j]
         self.read_offset += bit_count
