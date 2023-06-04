@@ -1002,7 +1002,7 @@ class CreateObject(Rpc):
             attach_offset = None
             attach_dir = None
             sync_rotation = None
-        return CreateObject(object_id, model_id, pos, dir, draw_distance, no_camera_col, attached_object, attached_vehicle, attach_offset, attach_rot, sync_rotation)
+        return CreateObject(object_id, model_id, pos, dir, draw_distance, no_camera_col, attached_object, attached_vehicle, attach_offset, attach_dir, sync_rotation)
 
 class SetObjectPos(Rpc):
     def __init__(self):
