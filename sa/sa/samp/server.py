@@ -324,6 +324,7 @@ class Server:
         
         id = self.get_unused_id(self)
         player = Player(id)
+        player.peer = peer
         self.player_pool[id] = player
         peer.player = player
         

@@ -579,6 +579,11 @@ for msg in MSG:
         if msg_class.__dict__.get('encode_payload') != None:
             msg.encode_client_payload = msg_class.encode_payload
             msg.encode_server_payload = msg_class.encode_payload
+        else:
+            if msg_class.__dict__.get('encode_client_payload') != None:
+                msg.encode_client_payload = msg_class.encode_client_payload
+            if msg_class.__dict__.get('encode_server_payload') != None:
+                msg.encode_server_payload = msg_class.encode_server_payload
         
         if msg_class.__dict__.get('decode_payload') != None:
             msg.decode_client_payload = msg_class.decode_payload
