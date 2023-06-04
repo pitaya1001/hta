@@ -944,6 +944,9 @@ class Peer:
         for callback in self.connected_message_callbacks:
             if callback(message, internal_packet, self) == True:
                 return
+        if message.id == MSG.INTERNAL_PING:
+            ping = message
+            self.push_message(ConnectedPong(ping.time, get_time()))
       
     def send_unconnected_message(self, message):
         if message.id == MSG.OPEN_CONNECTION_REPLY:
