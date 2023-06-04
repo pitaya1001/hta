@@ -41,7 +41,7 @@ class Server:
         }
         
         self.hostname = 'SA-MP 0.3 Server'
-        self.gamemode = 'Bare'
+        self.gamemode = 'None'
         self.language = 'English'
         self.password = '' # if empty, server has no password
         self.max_player_count = (MAX_PLAYER_ID + 1) # actual max player count used to limit how many players may join
