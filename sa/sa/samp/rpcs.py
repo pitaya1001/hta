@@ -23,6 +23,7 @@ class RPC(enum.IntEnum):
     SET_VEHICLE_PARAMS_EX       = 24  # SetVehicleParamsEx
     CLIENT_JOIN                 = 25  # ClientJoin
     PLAYER_ENTER_VEHICLE        = 26  # PlayerEnterVehicle
+    ENTER_VEHICLE               = 26  # EnterVehicle
     ENTER_EDIT_OBJECT           = 27  # EnterEditObject
     CANCEL_EDIT_OBJECT          = 28  # CancelEditObject
     SET_TIME                    = 29  # SetTime
@@ -138,6 +139,7 @@ class RPC(enum.IntEnum):
     SET_WEATHER                 = 152 # SetWeather
     SET_PLAYER_SKIN             = 153 # SetPlayerSkin
     PLAYER_EXIT_VEHICLE         = 154 # PlayerExitVehicle
+    EXIT_VEHICLE                = 154 # ExitVehicle
     REQUEST_SCORES_AND_PINGS    = 155 # RequestScoresAndPings
     SET_PLAYER_INTERIOR         = 156 # SetPlayerInterior
     SET_CAMERA_POS              = 157 # SetCameraPos
@@ -565,7 +567,7 @@ as_passenger: 0 if entering the driver seat; 1 if entering any passenger seat
 '''
 class EnterVehicle(Rpc):
     def __init__(self, vehicle_id, as_passenger):
-        super().__init__(RPC.PLAYER_ENTER_VEHICLE)
+        super().__init__(RPC.ENTER_VEHICLE)
         self.vehicle_id = vehicle_id
         self.as_passenger = as_passenger
 
@@ -578,6 +580,7 @@ class EnterVehicle(Rpc):
         vehicle_id = bs.read_u16()
         as_passenger = bs.read_u8()
         return EnterVehicle(vehicle_id, as_passenger)
+RPC.ENTER_VEHICLE.decode_client_rpc_payload = EnterVehicle.decode_rpc_payload
 
 class EnterEditObject(Rpc):
     def __init__(self):
@@ -819,6 +822,7 @@ class Show3DTextLabel(Rpc):
         attached_vehicle_id = bs.read_u16()
         text = bs.read_huffman_buffer(default_huffman_tree.root_node).decode(SAMP_ENCODING)
         return Show3DTextLabel(label_id, text, color, pos, draw_distance, test_los, attached_player_id, attached_vehicle_id)
+RPC.SHOW_3D_TEXT_LABEL.decode_server_rpc_payload = Show3DTextLabel.decode_rpc_payload
 
 class DisableCheckpoint(Rpc):
     def __init__(self):
@@ -1170,6 +1174,7 @@ class Hide3DTextLabel(Rpc):
     def decode_rpc_payload(bs):
         label_id = bs.read_u16()
         return Hide3DTextLabel(label_id)
+RPC.HIDE_3D_TEXT_LABEL.decode_server_rpc_payload = Hide3DTextLabel.decode_rpc_payload
 
 '''
 Text above a player's name tag.
@@ -2008,6 +2013,7 @@ class ClientCheckResponse(Rpc):
         arg = bs.read_u32()
         checksum = bs.read_u8()
         return ClientCheckResponse(type, arg, checksum)
+RPC.CLIENT_CHECK_RESPONSE.decode_server_rpc_payload = ClientCheckResponse.decode_rpc_payload
 
 class ToggleStuntBonus(Rpc):
     def __init__(self, enable):
@@ -2322,7 +2328,7 @@ response: either 1 or 0
 '''
 class RequestClassResponse(Rpc):
     def __init__(self, response, team=None, skin=None, pos=None, rotation=None, weapon1=None, weapon2=None, weapon3=None):
-        super().__init__(RPC.REQUEST_CLASS)
+        super().__init__(RPC.REQUEST_CLASS_RESPONSE)
         self.response = response
         self.team = team
         self.skin = None if (skin == None) else SKIN(skin)
@@ -2368,6 +2374,7 @@ class RequestClassResponse(Rpc):
             weapon2 = Weapon(weapon2_id, weapon2_ammo)
             weapon3 = Weapon(weapon3_id, weapon3_ammo)
         return RequestClassResponse(response, team, skin, pos, rotation, weapon1, weapon2, weapon3)
+RPC.REQUEST_CLASS_RESPONSE.decode_server_rpc_payload = RequestClassResponse.decode_rpc_payload
 
 class RequestSpawn(Rpc):
     def __init__(self):
@@ -2875,7 +2882,7 @@ vehicle_id: the id of the vehicle about to be exited
 '''
 class ExitVehicle(Rpc):
     def __init__(self, vehicle_id):
-        super().__init__(RPC.PLAYER_EXIT_VEHICLE)
+        super().__init__(RPC.EXIT_VEHICLE)
         self.vehicle_id = vehicle_id
 
     def encode_rpc_payload(self, bs):
@@ -2885,6 +2892,7 @@ class ExitVehicle(Rpc):
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
         return ExitVehicle(vehicle_id)
+RPC.EXIT_VEHICLE.decode_client_rpc_payload = ExitVehicle.decode_rpc_payload
 
 class RequestScoresAndPings(Rpc):
     def __init__(self):
@@ -2923,6 +2931,7 @@ class RequestScoresAndPingsResponse(Rpc):
             ping = bs.read_u32()
             players[i] = (id, score, ping)
         return RequestScoresAndPingsResponse(players)
+RPC.REQUEST_SCORES_AND_PINGS.decode_server_rpc_payload = RequestScoresAndPingsResponse.decode_rpc_payload
 
 class SetPlayerInterior(Rpc):
     def __init__(self, interior_id):
@@ -3261,9 +3270,9 @@ for rpc in RPC:
     class_name = ''.join(w.capitalize() for w in rpc.name.split('_'))
     try:
         rpc_class = getattr(module, class_name)
-        if rpc.__dict__.get('decode_client_rpc_payload') == None and rpc.__dict__.get('decode_server_rpc_payload') == None:
-            rpc.decode_client_rpc_payload = rpc.decode_server_rpc_payload = rpc_class.decode_rpc_payload
-        else:
-            pass # already defined means an RPC with different definitions if from client or server
+        if rpc.__dict__.get('decode_client_rpc_payload') == None:
+            rpc.decode_client_rpc_payload = rpc_class.decode_rpc_payload
+        if rpc.__dict__.get('decode_server_rpc_payload') == None:
+            rpc.decode_server_rpc_payload = rpc_class.decode_rpc_payload
     except AttributeError:
         continue
