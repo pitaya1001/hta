@@ -790,7 +790,7 @@ note: if the text is attached to a player or vehicle, 'pos' becomes an offset re
 Use the Hide3DTextLabel RPC to hide a 3d text label.
 '''
 class Show3DTextLabel(Rpc):
-    def __init__(self, label_id, text, color, pos, draw_distance=50.0, test_los=1, attached_player_id=INVALID_ID, attached_vehicle_id=INVALID_ID):
+    def __init__(self, label_id, text, color, pos, draw_distance=50.0, test_los=1, attached_player_id=None, attached_vehicle_id=None):
         super().__init__(RPC.SHOW_3D_TEXT_LABEL)
         self.label_id = label_id
         self.color = color
@@ -807,8 +807,8 @@ class Show3DTextLabel(Rpc):
         bs.write_vec3(self.pos)
         bs.write_float(self.draw_distance)
         bs.write_u8(self.test_los)
-        bs.write_u16(self.attached_player_id)
-        bs.write_u16(self.attached_vehicle_id)
+        bs.write_i16(-1 if self.attached_player_id == None else self.attached_player_id)
+        bs.write_i16(-1 if self.attached_vehicle_id == None else self.attached_vehicle_id)
         bs.write_huffman_buffer(self.text.encode(SAMP_ENCODING), default_huffman_tree.encoding_table)
 
     @staticmethod
@@ -818,8 +818,15 @@ class Show3DTextLabel(Rpc):
         pos = bs.read_vec3()
         draw_distance = bs.read_float()
         test_los = bs.read_u8()
-        attached_player_id = bs.read_u16()
-        attached_vehicle_id = bs.read_u16()
+        
+        attached_player_id = bs.read_i16()
+        if attached_player_id < 0:
+            attached_player_id = None
+        
+        attached_vehicle_id = bs.read_i16()
+        if attached_vehicle_id < 0:
+            attached_vehicle_id = None
+        
         text = bs.read_huffman_buffer(default_huffman_tree.root_node).decode(SAMP_ENCODING)
         return Show3DTextLabel(label_id, text, color, pos, draw_distance, test_los, attached_player_id, attached_vehicle_id)
 RPC.SHOW_3D_TEXT_LABEL.decode_server_rpc_payload = Show3DTextLabel.decode_rpc_payload
