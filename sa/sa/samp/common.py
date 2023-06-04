@@ -11,8 +11,8 @@ DEFAULT_GRAVITY = 0.008
 '''
 MAGIC_COOKIE = 0x6969
 
-MAX_PLAYER_ID = 1000 - 1
-MAX_VEHICLE_ID = 2000 - 1
+MAX_PLAYER_ID = 1000 - 1 # [0,999] ; Note: 0 is a valid player id
+MAX_VEHICLE_ID = 2000 - 1 # [1,1999] ; Note: 0 is NOT a valid vehicle id
 MAX_OBJECT_ID = 1000 - 1
 MAX_PLAYER_NAME_LENGTH = 24
 MAX_DIALOG_ID = 32768 - 1
@@ -95,6 +95,37 @@ gxt_dict = {
 def encode_gxt(s): return str(map(lambda c:gxt_dict[c], s))
 
 
+class SPECIAL_ACTION(enum.IntEnum):
+	NONE          = 0
+	DUCK          = 1
+	JETPACK       = 2
+	ENTER_VEHICLE = 3
+	EXIT_VEHICLE  = 4
+	DANCE1        = 5
+	DANCE2        = 6
+	DANCE3        = 7
+	DANCE4        = 8
+	HANDSUP       = 10 
+	CELLPHONE     = 11
+	SITTING       = 12
+	STOPCELLPHONE = 13
+	BEER          = 20
+	SMOKE         = 21
+	WINE          = 22
+	SPRUNK        = 23
+	CUFFED        = 24
+	CARRY         = 25
+	PISSING       = 68
+
+# Used in two RPCs: SetPlayerFightingStyle and WorldPlayerAdd
+class FIGHTING_STYLE(enum.IntEnum):
+	NORMAL   = 4
+	BOXING   = 5
+	KUNGFU   = 6
+	KNEEHEAD = 7
+	GRABKICK = 15
+	ELBOW    = 16
+
 #logging.basicConfig(filename='samp.log',filemode='a',format='%(asctime)s.%(msecs)03d %(message)s',datefmt='%d%m%y-%H%M%S',level=logging.INFO)
 
 def setup_logger(logger_name, file_name):
@@ -113,3 +144,4 @@ main_logger = setup_logger('main', 'samp.log')
 def log(s):
     #logging.info(s)
     main_logger.info(s)
+
