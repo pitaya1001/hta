@@ -2,7 +2,7 @@ from sa.player import Player as SaPlayer
 from .keys import *
 
 class Player(SaPlayer):
-    def __init__(self, id, name=None, color=0xffffffff):
+    def __init__(self, id, name='', color=0xffffffff):
         super().__init__()
         self.peer = None
         self.id = id
