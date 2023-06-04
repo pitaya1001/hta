@@ -4,3 +4,4 @@ from .messages import *
 from .rpcs import *
 from .player import *
 from .common import *
+from .anim import *

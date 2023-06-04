@@ -336,10 +336,10 @@ class BulletSync(Message):
 ''' S2C and S2C
 '''
 class PlayerSync(Message):
-    def __init__(self, player_id, key_data=KeyData(0, 0, 0), pos=Vec3(0.0, 0.0, 2.0), dir=Quat(0.0, 0.0, 0.0, 0.0), health=100, armor=0, additional_key=0, weapon_id=0, special_action=0, vel=Vec3(0.0, 0.0, 0.0), surf_offset=None, surf_vehicle_id=None, animation_id=None, animation_flags=None):
+    def __init__(self, player_id, key_data=KeyData(0, 0, 0), pos=Vec3(0.0, 0.0, 3.0), dir=Quat(0.0, 0.0, 0.0, 0.0), health=100, armor=0, weapon_id=0, special_action=0, vel=Vec3(0.0, 0.0, 0.0), surf_data=None, anim_data=None):
         super().__init__(MSG.PLAYER_SYNC)
         self.player_id = player_id
-        self.key_data = key_data
+        self.key_data = key_data # KeyData; see keys.py
         self.pos = pos # Player position as Vec3
         self.dir = dir # Player direction as Quat
         self.health = health
@@ -347,10 +347,8 @@ class PlayerSync(Message):
         self.weapon_id = weapon_id
         self.special_action = special_action
         self.vel = vel # Player velocity as Vec3
-        self.surf_offset = surf_offset
-        self.surf_vehicle_id = surf_vehicle_id
-        self.animation_id = animation_id
-        self.animation_flags = animation_flags
+        self.surf_data = surf_data # SurfData; see surf.py
+        self.anim_data = anim_data # AnimData; see anim.py
 
     def encode_server_payload(self):
         bs = Bitstream()
@@ -363,21 +361,8 @@ class PlayerSync(Message):
         bs.write_bits_num(self.key_data.keys >> 16, 2)
         bs.write_u8(self.special_action)
         bs.write_compressed_vec3(self.vel)
-
-        if self.surf_vehicle_id != None:
-            bs.write_bit(1)
-            bs.write_i16(self.surf_vehicle_id)
-            bs.write_vec3(self.surf_offset)
-        else:
-            bs.write_bit(0)
-
-        if self.animation_id != None:
-            bs.write_bit(1)
-            bs.write_i16(self.animation_id)
-            bs.write_u16(self.animation_flags)
-        else:
-            bs.write_bit(0)
-
+        bs.write_compressed_surf_data(self.surf_data)
+        bs.write_compressed_anim_data(self.anim_data)
         return bs.data[:TO_BYTES(bs.len)]
 
     def encode_client_payload(self):
@@ -391,10 +376,8 @@ class PlayerSync(Message):
         bs.write_bits_num(self.key_data.keys >> 16, 2)
         bs.write_u8(self.special_action)
         bs.write_vec3(self.vel)
-        bs.write_vec3(self.surf_offset)
-        bs.write_i16(self.surf_vehicle_id)
-        bs.write_i16(self.animation_id)
-        bs.write_u16(self.animation_flags)
+        bs.write_surf_data(self.surf_data)
+        bs.write_anim_data(self.anim_data)
         return bs.data[:TO_BYTES(bs.len)]
 
     @staticmethod
@@ -410,22 +393,9 @@ class PlayerSync(Message):
         key_data.keys |= (bs.read_bits_num(2) << 16)
         special_action = bs.read_u8()
         vel = bs.read_compressed_vec3()
-
-        if has_surf := bs.read_bit():
-            surf_vehicle_id = bs.read_i16()
-            surf_offset = bs.read_vec3()
-        else:
-            surf_vehicle_id = None
-            surf_offset = None
-
-        if has_animation := bs.read_bit():
-            animation_id = bs.read_i16()
-            animation_flags = bs.read_u16()
-        else:
-            animation_id = None
-            animation_flags = None
-
-        return PlayerSync(player_id, key_data, pos, dir, health, armor, weapon_id, special_action, vel, surf_offset, surf_vehicle_id, animation_id, animation_flags)
+        surf_data = bs.read_compressed_surf_data()
+        anim_data = bs.read_compressed_anim_data()
+        return PlayerSync(player_id, key_data, pos, dir, health, armor, weapon_id, special_action, vel, surf_data, anim_data)
 
     @staticmethod
     def decode_client_payload(data):
@@ -439,20 +409,9 @@ class PlayerSync(Message):
         key_data.keys |= (bs.read_bits_num(2) << 16)
         special_action = bs.read_u8()
         vel = bs.read_vec3()
-        surf_offset = bs.read_vec3()
-        surf_vehicle_id = bs.read_i16()
-        animation_id = bs.read_i16()
-        animation_flags = bs.read_u16()
-
-        if surf_vehicle_id == -1:
-            surf_vehicle_id = None
-            surf_offset = None
-
-        if animation_id == -1:
-            animation_id = None
-            animation_flags = None
-
-        return PlayerSync(None, key_data, pos, dir, health, armor, weapon_id, special_action, vel, surf_offset, surf_vehicle_id, animation_id, animation_flags)
+        surf_data = bs.read_surf_data()
+        anim_data = bs.read_anim_data()
+        return PlayerSync(None, key_data, pos, dir, health, armor, weapon_id, special_action, vel, surf_data, anim_data)
 
 ''' S2C
 
@@ -674,10 +633,11 @@ class PassengerSync(Message):
         seat_id = bs.read_bits_num(2)
         drive_by = bs.read_bits_num(6)
         passenger_weapon_id = bs.read_bits_num(6)
-        key_data.keys |= (bs.read_bits_num(2) << 16)
+        additional_key = bs.read_bits_num(2)
         passenger_health = bs.read_u8()
         passenger_armor = bs.read_u8()
         key_data = bs.read_key_data()
+        key_data.keys |= (additional_key << 16)
         pos = bs.read_vec3()
         return PassengerSync(None, vehicle_id, seat_id, drive_by, passenger_weapon_id, passenger_health, passenger_armor, key_data, pos)
 
