@@ -194,7 +194,7 @@ class AimSync(Message):
         super().__init__(MSG.AIM_SYNC)
         self.player_id = player_id
         self.cam_mode = cam_mode
-        self.cam_dir = dir # camera direction as Vec3(euler angles)
+        self.cam_dir = cam_dir # camera direction as Vec3(euler angles)
         self.cam_pos = cam_pos # camera position as Vec3
         self.aim_z = aim_z
         self.weapon_state = weapon_state
