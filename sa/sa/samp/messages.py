@@ -596,7 +596,7 @@ class UnoccupiedVehicleSync(Message):
         return UnoccupiedVehicleSync(player_id, vehicle_id, seat_id, roll, rot, pos, vel, angular_vel, health)
 
     @staticmethod
-    def decode_client_payload(data)
+    def decode_client_payload(data):
         bs = Bitstream(data)
         vehicle_id = bs.read_u16()
         seat_id = bs.read_u8()
