@@ -81,7 +81,7 @@ class RPC(enum.IntEnum):
     STOP_FLASH_GANG_ZONE        = 85  # StopFlashGangZone
     APPLY_PLAYER_ANIMATION      = 86  # ApplyPlayerAnimation
     CLEAR_PLAYER_ANIMATIONS     = 87  # ClearPlayerAnimations
-    SET_PLAYER_SPECIAL_ACTION   = 88  # SetPlayerSpecialAction
+    SET_SPECIAL_ACTION          = 88  # SetSpecialAction
     SET_PLAYER_FIGHTING_STYLE   = 89  # SetPlayerFightingStyle
     SET_PLAYER_VELOCITY         = 90  # SetPlayerVelocity
     SET_VEHICLE_VELOCITY        = 91  # SetVehicleVelocity
@@ -1740,50 +1740,93 @@ class ClearPlayerAnimations(Rpc):
         player_id = bs.read_u16()
         return ClearPlayerAnimations(player_id)
 
-class SetPlayerSpecialAction(Rpc):
-    def __init__(self):
-        super().__init__(RPC.SET_PLAYER_SPECIAL_ACTION)
+''' S2C
+Sets the special action of the player this RPC is sent to.
+action_id: see the SPECIAL_ACTION enum class
+BUG: Removing jetpacks from players by setting their special action to 0 causes the sound to stay until death.
+'''
+class SetSpecialAction(Rpc):
+    def __init__(self, action_id):
+        super().__init__(RPC.SET_SPECIAL_ACTION)
+        self.action_id = action_id
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u8(self.action_id)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetPlayerSpecialAction()
+        action_id = bs.read_u8()
+        return SetSpecialAction(action_id)
 
+''' S2C
+Sets the fighting style of the specified player.
+player_id: id of the player to set the fighting style
+fighting_style: value to set; see the FIGHTING_STYLE class enum
+'''
 class SetPlayerFightingStyle(Rpc):
-    def __init__(self):
+    def __init__(self, player_id, fighting_style):
         super().__init__(RPC.SET_PLAYER_FIGHTING_STYLE)
+        self.player_id = player_id
+        self.fighting_style = fighting_style
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u16(self.player_id)
+        bs.write_u8(self.fighting_style)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetPlayerFightingStyle()
+        player_id = bs.read_u16()
+        fighting_style = bs.read_u8()
+        return SetPlayerFightingStyle(player_id, fighting_style)
 
+''' S2C
+Sets the velocity of the player this RPC is sent to.
+vel: velocity to set (Vec3)
+'''
 class SetPlayerVelocity(Rpc):
-    def __init__(self):
+    def __init__(self, vel):
         super().__init__(RPC.SET_PLAYER_VELOCITY)
+        self.vel = vel # new player velocity as Vec3
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_vec3(self.vel)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetPlayerVelocity()
+        vel = bs.read_vec3()
+        return SetPlayerVelocity(vel)
 
+class VEHICLE_VELOCITY(enum.IntEnum):
+    LINEAR  = 0
+    ANGULAR = 1
+
+''' S2C
+Sets the velocity(linear or angular) of the vehicle the player this RPC is sent to is driving.
+This RPC has no affect on un-occupied vehicles and does not affect trains.
+Note: The player this RPC is sent to should be the driver of a vehicle.
+type: either VEHICLE_VELOCITY.LINEAR or VEHICLE_VELOCITY.ANGULAR
+'''
 class SetVehicleVelocity(Rpc):
-    def __init__(self):
+    def __init__(self, type, vel):
         super().__init__(RPC.SET_VEHICLE_VELOCITY)
+        self.type = VEHICLE_VELOCITY(type)
+        self.vel = vel
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u8(self.type)
+        bs.write_vec3(self.vel)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetVehicleVelocity()
+        type = bs.read_u8()
+        vel = bs.read_vec3()
+        return SetVehicleVelocity(type, vel)
 
+''' S2C
+Adds the specified message to the chatbox of the player this RPC is sent to.
+message: message
+color: color as RRGGBBAA
+'''
 class ChatMessage(Rpc):
     def __init__(self, message, color=0xffffffff):
         super().__init__(RPC.CHAT_MESSAGE)
@@ -1915,6 +1958,7 @@ class RequestChatMessage(Rpc):
     def decode_rpc_payload(bs):
         message = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return RequestChatMessage(message)
+RPC.REQUEST_CHAT_MESSAGE.decode_client_rpc_payload = RequestChatMessage.decode_rpc_payload
 
 class PlayerChatMessage(Rpc):
     def __init__(self, player_id, message):
@@ -1931,6 +1975,7 @@ class PlayerChatMessage(Rpc):
         player_id = bs.read_u16()
         message = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
         return PlayerChatMessage(player_id, message)
+RPC.PLAYER_CHAT_MESSAGE.decode_server_rpc_payload = PlayerChatMessage.decode_rpc_payload
 
 class SvrStats(Rpc):
     def __init__(self):
@@ -2845,6 +2890,8 @@ class SetWeather(Rpc):
 
 ''' S2C
 Sets the skin of the specified player
+player_id: id of the player to set the skin
+skin_id: id of the skin to set; see the SKIN enumeration
 '''
 class SetPlayerSkin(Rpc):
     def __init__(self, player_id, skin_id):
