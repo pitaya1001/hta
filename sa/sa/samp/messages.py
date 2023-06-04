@@ -9,8 +9,13 @@ from sa.vehicle import VEHICLE
 
 from .common import *
 
+from .keys import *
+
 '''
 These are raknet messages defined by SA-MP.
+
+Keys
+key_data + additional_key
 
 '''
 
@@ -19,13 +24,11 @@ Client sends this message when it is driving a vehicle
 Server sends this message when there are players driving vehicles in the FOV of the client
 '''
 class DriverSync(Message):
-    def __init__(self, driver_id, vehicle_id, lr_keys, ud_keys, keys, dir, pos, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, additional_key, siren=0, landing_gear=0, trailer_id=None, extra=None):
+    def __init__(self, driver_id, vehicle_id, pos, key_data=KeyData(0, 0, 0), dir=Quat(0.0, 0.0, 0.0, 0.0), velocity=Vec3(0.0, 0.0, 0.0), vehicle_health=1000, driver_health=100, driver_armor=0, driver_weapon_id=0, siren=0, landing_gear=0, trailer_id=None, extra=None):
         super().__init__(MSG.DRIVER_SYNC)
         self.driver_id = driver_id # player id of the driver
         self.vehicle_id = vehicle_id
-        self.lr_keys = lr_keys
-        self.ud_keys = ud_keys
-        self.keys = keys
+        self.key_data = key_data # KeyData
         self.dir = dir # vehicle direction as Quat
         self.pos = pos # vehicle position as Vec3
         self.velocity = velocity # vehicle velocity as Vec3
@@ -33,7 +36,6 @@ class DriverSync(Message):
         self.driver_health = driver_health
         self.driver_armor = driver_armor
         self.driver_weapon_id = driver_weapon_id
-        self.additional_key = additional_key
         self.siren = siren # 1=on; 0=off
         self.landing_gear = landing_gear # landing_gear: 1 if retracted, 0 if in normal state
         self.trailer_id = trailer_id # None if invalid
@@ -48,20 +50,18 @@ class DriverSync(Message):
         bs = Bitstream()
         bs.write_i16(self.driver_id)
         bs.write_i16(self.vehicle_id)
-        bs.write_u16(self.lr_keys)
-        bs.write_u16(self.ud_keys)
-        bs.write_u16(self.keys)
+        bs.write_key_data(aself.key_data)
         bs.write_norm_quat(self.dir)
         bs.write_vec3(self.pos)
         bs.write_compressed_vec3(self.velocity)
         bs.write_u16(self.vehicle_health)
         bs.write_u8(((int(self.driver_health)&0xff)//7<<4) | ((int(self.driver_armor)//7)&0x0f))
         bs.write_bits_num(self.driver_weapon_id, 6)
-        bs.write_bits_num(self.additional_key, 2)
+        bs.write_bits_num(self.key_data.keys >> 16, 2) # remaining bits of key_data.keys
         bs.write_bit(self.siren)
         bs.write_bit(self.landing_gear)
 
-        if self.has_extra != None:
+        if self.extra != None:
             bs.write_bit(1)
             bs.write_buffer(self.extra, 32)
         else:
@@ -78,9 +78,7 @@ class DriverSync(Message):
     def encode_client_payload(self):
         bs = Bitstream()
         bs.write_i16(self.vehicle_id)
-        bs.write_u16(self.lr_keys)
-        bs.write_u16(self.ud_keys)
-        bs.write_u16(self.keys)
+        bs.write_key_data(self.key_data)
         bs.write_quat(self.dir)
         bs.write_vec3(self.pos)
         bs.write_vec3(self.velocity)
@@ -88,16 +86,11 @@ class DriverSync(Message):
         bs.write_u8(self.driver_health)
         bs.write_u8(self.driver_armor)
         bs.write_bits_num(self.driver_weapon_id, 6)
-        bs.write_bits_num(self.additional_key, 2)
+        bs.write_bits_num(self.key_data.keys >> 16, 2) # remaining bits of key_data.keys
         bs.write_u8(self.siren)
         bs.write_u8(self.landing_gear)
         bs.write_i16(self.trailer_id)
-
-        if self.extra == None:
-            bs.write_buffer(bytearray(4), 32)
-        else:
-            bs.write_buffer(self.extra, 32)
-
+        bs.write_buffer(self.extra if self.extra != None else bytearray(4), 32)
         return bs.data[:TO_BYTES(bs.len)]
 
     @staticmethod
@@ -105,20 +98,15 @@ class DriverSync(Message):
         bs = Bitstream(data)
         driver_id = bs.read_u16()
         vehicle_id = bs.read_u16()
-        lr_keys = bs.read_u16()
-        ud_keys = bs.read_u16()
-        keys = bs.read_u16()
+        key_data = bs.read_key_data()
         dir = bs.read_norm_quat()
         pos = bs.read_vec3()
         velocity = bs.read_compressed_vec3()
         vehicle_health = bs.read_u16()
-
-        health_armor_byte = bs.read_u8()
-        driver_health = min(100, (health_armor_byte >> 4) * 7)
-        driver_armor = min(100, (health_armor_byte & 0xf) * 7)
-
+        driver_health = min(100, bs.read_bits_num(4) * 7)
+        driver_armor = min(100, bs.read_bits_num(4) * 7)
         driver_weapon_id = bs.read_bits_num(6)
-        additional_key = bs.read_bits_num(2)
+        key_data.keys |= (bs.read_bits_num(2) << 16)
         siren = bs.read_bit()
         landing_gear = bs.read_bit()
 
@@ -132,15 +120,13 @@ class DriverSync(Message):
         else:
             trailer_id = None
 
-        return DriverSync(driver_id, vehicle_id, lr_keys, ud_keys, keys, dir, pos, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, additional_key, siren, landing_gear, trailer_id, extra)
+        return DriverSync(driver_id, vehicle_id, pso, key_data, dir, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, siren, landing_gear, trailer_id, extra)
 
     @staticmethod
     def decode_client_payload(data):
         bs = Bitstream(data)
         vehicle_id = bs.read_i16()
-        lr_keys = bs.read_u16()
-        ud_keys = bs.read_u16()
-        keys = bs.read_u16()
+        key_data = bs.read_key_data()
         dir = bs.read_quat()
         pos = bs.read_vec3()
         velocity = bs.read_vec3()
@@ -148,7 +134,7 @@ class DriverSync(Message):
         driver_health = bs.read_u8()
         driver_armor = bs.read_u8()
         driver_weapon_id = bs.read_bits_num(6)
-        additional_key = bs.read_bits_num(2)
+        key_data.keys |= (bs.read_bits_num(2) << 16)
         siren = bs.read_u8()
         landing_gear = bs.read_u8()
         trailer_id = bs.read_i16()
@@ -157,7 +143,7 @@ class DriverSync(Message):
         if trailer_id == -1:
             trailer_id = None
 
-        return DriverSync(None, vehicle_id, lr_keys, ud_keys, keys, dir, pos, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, additional_key, siren, landing_gear, trailer_id, extra)
+        return DriverSync(None, vehicle_id, pos, key_data, dir, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, siren, landing_gear, trailer_id, extra)
 
 class RconCommand(Message):
     def __init__(self, command):
@@ -350,17 +336,14 @@ class BulletSync(Message):
 ''' S2C and S2C
 '''
 class PlayerSync(Message):
-    def __init__(self, player_id, lr_keys=0, ud_keys=0, keys=0, pos=Vec3(0.0, 0.0, 2.0), dir=Vec3(0.0, 0.0, 0.0), health=0, armor=0, additional_key=0, weapon_id=0, special_action=0, vel=Vec3(0.0, 0.0, 0.0), surf_offset=None, surf_vehicle_id=None, animation_id=None, animation_flags=None):
+    def __init__(self, player_id, key_data=KeyData(0, 0, 0), pos=Vec3(0.0, 0.0, 2.0), dir=Quat(0.0, 0.0, 0.0, 0.0), health=100, armor=0, additional_key=0, weapon_id=0, special_action=0, vel=Vec3(0.0, 0.0, 0.0), surf_offset=None, surf_vehicle_id=None, animation_id=None, animation_flags=None):
         super().__init__(MSG.PLAYER_SYNC)
         self.player_id = player_id
-        self.lr_keys = lr_keys
-        self.ud_keys = ud_keys
-        self.keys = keys
+        self.key_data = key_data
         self.pos = pos # Player position as Vec3
         self.dir = dir # Player direction as Quat
         self.health = health
         self.armor = armor
-        self.additional_key = additional_key
         self.weapon_id = weapon_id
         self.special_action = special_action
         self.vel = vel # Player velocity as Vec3
@@ -372,27 +355,12 @@ class PlayerSync(Message):
     def encode_server_payload(self):
         bs = Bitstream()
         bs.write_u16(self.player_id)
-
-        if self.lr_keys != 0:
-            bs.write_bit(1)
-            bs.write_u16(self.lr_keys)
-        else:
-            bs.write_bit(0)
-
-        if self.ud_keys != 0:
-            bs.write_bit(1)
-            bs.write_u16(self.ud_keys)
-        else:
-            bs.write_bit(0)
-
-        bs.write_u16(self.keys)
+        bs.write_compressed_key_data(self.key_data)
         bs.write_vec3(self.pos)
         bs.write_norm_quat(self.dir)
-
         bs.write_u8(((int(self.health)&0xff)//7<<4) | ((int(self.armor)//7)&0x0f))
-
         bs.write_bits_num(self.weapon_id, 6)
-        bs.write_bits_num(self.additional_key, 2)
+        bs.write_bits_num(self.key_data.keys >> 16, 2)
         bs.write_u8(self.special_action)
         bs.write_compressed_vec3(self.vel)
 
@@ -414,15 +382,13 @@ class PlayerSync(Message):
 
     def encode_client_payload(self):
         bs = Bitstream()
-        bs.write_u16(self.lr_keys)
-        bs.write_u16(self.ud_keys)
-        bs.write_u16(self.keys)
+        bs.write_key_data(self.key_data)
         bs.write_vec3(self.pos)
         bs.write_quat(self.dir)
         bs.write_u8(self.health)
         bs.write_u8(self.armor)
         bs.write_bits_num(self.weapon_id, 6)
-        bs.write_bits_num(self.additional_key, 2)
+        bs.write_bits_num(self.key_data.keys >> 16, 2)
         bs.write_u8(self.special_action)
         bs.write_vec3(self.vel)
         bs.write_vec3(self.surf_offset)
@@ -435,27 +401,13 @@ class PlayerSync(Message):
     def decode_server_payload(data):
         bs = Bitstream(data)
         player_id = bs.read_u16()
-
-        if has_lr := bs.read_bit():
-            lr_keys = bs.read_u16()
-        else:
-            lr_keys = 0
-
-        if has_ud := bs.read_bit():
-            ud_keys = bs.read_u16()
-        else:
-            ud_keys = 0
-
-        keys = bs.read_u16()
+        key_data = bs.read_compressed_key_data()
         pos = bs.read_vec3()
         dir = bs.read_norm_quat()
-
-        health_armor_byte = bs.read_u8()
-        health = min(100, (health_armor_byte >> 4) * 7)
-        armor = min(100, (health_armor_byte & 0xf) * 7)
-
+        health = min(100, bs.read_bits_num(4) * 7)
+        armor = min(100, bs.read_bits_num(4) * 7)
         weapon_id = bs.read_bits_num(6)
-        additional_key = bs.read_bits_num(2)
+        key_data.keys |= (bs.read_bits_num(2) << 16)
         special_action = bs.read_u8()
         vel = bs.read_compressed_vec3()
 
@@ -473,20 +425,18 @@ class PlayerSync(Message):
             animation_id = None
             animation_flags = None
 
-        return PlayerSync(player_id, lr_keys, ud_keys, keys, pos, dir, health, armor, additional_key, weapon_id, special_action, vel, surf_offset, surf_vehicle_id, animation_id, animation_flags)
+        return PlayerSync(player_id, key_data, pos, dir, health, armor, weapon_id, special_action, vel, surf_offset, surf_vehicle_id, animation_id, animation_flags)
 
     @staticmethod
     def decode_client_payload(data):
         bs = Bitstream(data)
-        lr_keys = bs.read_u16()
-        ud_keys = bs.read_u16()
-        keys = bs.read_u16()
+        key_data = bs.read_key_data()
         pos = bs.read_vec3()
         dir = bs.read_quat()
         health = bs.read_u8()
         armor = bs.read_u8()
         weapon_id = bs.read_bits_num(6)
-        additional_key = bs.read_bits_num(2)
+        key_data.keys |= (bs.read_bits_num(2) << 16)
         special_action = bs.read_u8()
         vel = bs.read_vec3()
         surf_offset = bs.read_vec3()
@@ -502,7 +452,7 @@ class PlayerSync(Message):
             animation_id = None
             animation_flags = None
 
-        return PlayerSync(None, lr_keys, ud_keys, keys, pos, dir, health, armor, additional_key, weapon_id, special_action, vel, surf_offset, surf_vehicle_id, animation_id, animation_flags)
+        return PlayerSync(None, key_data, pos, dir, health, armor, weapon_id, special_action, vel, surf_offset, surf_vehicle_id, animation_id, animation_flags)
 
 ''' S2C
 
@@ -663,19 +613,16 @@ class TrailerSync(Message):
 ''' S2C and C2S
 '''
 class PassengerSync(Message):
-    def __init__(self, passenger_id, vehicle_id, seat_id, drive_by, passenger_weapon_id, additional_key, passenger_health, passenger_armor, lr_keys, ud_keys, keys, pos):
+    def __init__(self, passenger_id, vehicle_id, seat_id, drive_by, passenger_weapon_id, passenger_health, passenger_armor, key_data, pos):
         super().__init__(MSG.PASSENGER_SYNC)
         self.passenger_id = passenger_id
         self.vehicle_id = vehicle_id
         self.seat_id = seat_id
         self.drive_by = drive_by
         self.passenger_weapon_id = passenger_weapon_id
-        self.additional_key = additional_key
         self.passenger_health = passenger_health
         self.passenger_armor = passenger_armor
-        self.lr_keys = lr_keys
-        self.ud_keys = ud_keys
-        self.keys = keys
+        self.key_data = key_data
         self.pos = pos # passenger position; vec3
 
     def encode_server_payload(self):
@@ -685,12 +632,10 @@ class PassengerSync(Message):
         bs.write_bits_num(self.seat_id, 2)
         bs.write_bits_num(self.drive_by, 6)
         bs.write_bits_num(self.passenger_weapon_id, 6)
-        bs.write_bits_num(self.additional_key, 2)
+        bs.write_bits_num(self.key_data.keys >> 16, 2)
         bs.write_u8(self.passenger_health)
         bs.write_u8(self.passenger_armor)
-        bs.write_u16(self.lr_keys)
-        bs.write_u16(self.ud_keys)
-        bs.write_u16(self.keys)
+        bs.write_key_data(self.key_data)
         bs.write_vec3(self.pos)
         return bs.data[:TO_BYTES(bs.len)]
 
@@ -700,12 +645,10 @@ class PassengerSync(Message):
         bs.write_bits_num(self.seat_id, 2)
         bs.write_bits_num(self.drive_by, 6)
         bs.write_bits_num(self.passenger_weapon_id, 6)
-        bs.write_bits_num(self.additional_key, 2)
+        bs.write_bits_num(self.key_data.keys >> 16, 2)
         bs.write_u8(self.passenger_health)
         bs.write_u8(self.passenger_armor)
-        bs.write_u16(self.lr_keys)
-        bs.write_u16(self.ud_keys)
-        bs.write_u16(self.keys)
+        bs.write_key_data(self.key_data)
         bs.write_vec3(self.pos)
         return bs.data[:TO_BYTES(bs.len)]
 
@@ -717,14 +660,12 @@ class PassengerSync(Message):
         seat_id = bs.read_bits_num(2)
         drive_by = bs.read_bits_num(6)
         passenger_weapon_id = bs.read_bits_num(6)
-        additional_key = bs.read_bits_num(2)
+        key_data.keys |= (bs.read_bits_num(2) << 16)
         passenger_health = bs.read_u8()
         passenger_armor = bs.read_u8()
-        lr_keys = bs.read_u16()
-        ud_keys = bs.read_u16()
-        keys = bs.read_u16()
+        key_data = bs.read_key_data()
         pos = bs.read_vec3()
-        return PassengerSync(passenger_id, vehicle_id, seat_id, drive_by, passenger_weapon_id, additional_key, passenger_health, passenger_armor, lr_keys, ud_keys, keys, pos)
+        return PassengerSync(passenger_id, vehicle_id, seat_id, drive_by, passenger_weapon_id, passenger_health, passenger_armor, key_data, pos)
 
     @staticmethod
     def decode_client_payload(data):
@@ -733,76 +674,43 @@ class PassengerSync(Message):
         seat_id = bs.read_bits_num(2)
         drive_by = bs.read_bits_num(6)
         passenger_weapon_id = bs.read_bits_num(6)
-        additional_key = bs.read_bits_num(2)
+        key_data.keys |= (bs.read_bits_num(2) << 16)
         passenger_health = bs.read_u8()
         passenger_armor = bs.read_u8()
-        lr_keys = bs.read_u16()
-        ud_keys = bs.read_u16()
-        keys = bs.read_u16()
+        key_data = bs.read_key_data()
         pos = bs.read_vec3()
-        return PassengerSync(None, vehicle_id, seat_id, drive_by, passenger_weapon_id, additional_key, passenger_health, passenger_armor, lr_keys, ud_keys, keys, pos)
+        return PassengerSync(None, vehicle_id, seat_id, drive_by, passenger_weapon_id, passenger_health, passenger_armor, key_data, pos)
 
 ''' S2C and C2S
 '''
 class SpectatorSync(Message):
-    def __init__(self, lr_keys, ud_keys, keys, pos):
+    def __init__(self, key_data, pos):
         super().__init__(MSG.SPECTATOR_SYNC)
-        self.lr_keys = lr_keys
-        self.ud_keys = ud_keys
-        self.keys = keys
+        self.key_data = key_data # KeyData
         self.pos = pos # player position as Vec3
 
     def encode_server_payload(self):
         bs = Bitstream()
-
-        if self.lr_keys != 0:
-            bs.write_bit(1)
-            bs.write_u16(self.lr_keys)
-        else:
-            bs.write_bit(0)
-
-        if self.ud_keys != 0:
-            bs.write_bit(1)
-            bs.write_u16(self.ud_keys)
-        else:
-            bs.write_bit(0)
-
-        bs.write_u16(self.keys)
+        bs.write_compressed_key_data(self.key_data)
         bs.write_vec3(self.pos)
-
         return bs.data[:TO_BYTES(bs.len)]
 
     def encode_client_payload(self):
         bs = Bitstream()
-        bs.write_u16(self.lr_keys)
-        bs.write_u16(self.ud_keys)
-        bs.write_u16(self.keys)
+        bs.write_key_data(self.key_data)
         bs.write_vec3(self.pos)
         return bs.data[:TO_BYTES(bs.len)]
 
     @staticmethod
     def decode_server_payload(data):
         bs = Bitstream(data)
-
-        if has_lr := bs.read_bit():
-            lr_keys = bs.read_u16()
-        else:
-            lr_keys = 0
-
-        if has_ud := bs.read_bit():
-            ud_keys = bs.read_u16()
-        else:
-            ud_keys = 0
-
-        keys = bs.read_u16()
+        key_data = bs.read_compressed_key_data()
         pos = bs.read_vec3()
-        return SpectatorSync(lr_keys, ud_keys, keys, pos)
+        return SpectatorSync(key_data, pos)
 
     @staticmethod
     def decode_client_payload(data):
         bs = Bitstream(data)
-        lr_keys = bs.read_u16()
-        ud_keys = bs.read_u16()
-        keys = bs.read_u16()
+        key_data = bs.read_key_data()
         pos = bs.read_vec3()
-        return SpectatorSync(lr_keys, ud_keys, keys, pos)
+        return SpectatorSync(key_data, pos)
