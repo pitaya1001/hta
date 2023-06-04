@@ -83,19 +83,19 @@ class MSG(enum.IntEnum):
     #ADVERTISE_SYSTEM                  = 55  # 0x37
 
     # samp message identifiers
-    DRIVER_SYNC     = 200  # 0xc8
-    RCON_COMMAND    = 201  # 0xc9
-    RCON_RESPONSE   = 202  # 0xca
-    AIM_SYNC        = 203  # 0xcb
-    WEAPONS_UPDATE  = 204  # 0xcc
-    STATS_UPDATE    = 205  # 0xcd
-    BULLET_SYNC     = 206  # 0xce
-    PLAYER_SYNC     = 207  # 0xcf
-    MARKERS_SYNC    = 208  # 0xd0
-    UNOCCUPIED_SYNC = 209  # 0xd1
-    TRAILER_SYNC    = 210  # 0xd2
-    PASSENGER_SYNC  = 211  # 0xd3
-    SPECTATOR_SYNC  = 212  # 0xd4
+    DRIVER_SYNC             = 200  # 0xc8
+    RCON_COMMAND            = 201  # 0xc9
+    #RCON_RESPONSE           = 202  # 0xca
+    AIM_SYNC                = 203  # 0xcb
+    WEAPONS_UPDATE          = 204  # 0xcc
+    STATS_UPDATE            = 205  # 0xcd
+    BULLET_SYNC             = 206  # 0xce
+    PLAYER_SYNC             = 207  # 0xcf
+    MARKERS_SYNC            = 208  # 0xd0
+    UNOCCUPIED_VEHICLE_SYNC = 209  # 0xd1
+    TRAILER_SYNC            = 210  # 0xd2
+    PASSENGER_SYNC          = 211  # 0xd3
+    SPECTATOR_SYNC          = 212  # 0xd4
     
     def is_samp(self):
         return self.value >= MSG.DRIVER_SYNC
