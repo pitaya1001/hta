@@ -425,6 +425,9 @@ class Bitstream:
         elif value > 1.0: value = 1.0
         self.write_u16(int((value + 1.0) * 32767.5))
 
+    def write_buffer(self, buffer, n):
+        self.write_bits(buffer, n)
+    
     def write_dynamic_buffer_u8(self, buffer):
         size = len(buffer)
         self.write_u8(size)
