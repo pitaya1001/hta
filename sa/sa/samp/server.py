@@ -27,6 +27,8 @@ class Server:
         self.query = True # If true, the server answers queries, otherwise it doesn't
         
         self.player_pool = [None] * (MAX_PLAYER_ID + 1) # useful for lookup(O(1) time) by player id
+        
+        self.vehicle_pool = [None] * (MAX_VEHICLE_ID + 1) # useful for lookup(O(1) time) by vehicle id
                 
         # {rule: var, rule: var, ...} ; both are strings
         self.rules = {
