@@ -426,7 +426,7 @@ class Server:
                     # tell this peer which players are connected
                     for _, p in self.peers.items():
                         if p != peer:
-                            peer.push_message(ServerJoin(p.player.id, p.player.color, is_npc=False, player_name=p.player.name))
+                            peer.push_message(ServerJoin(p.player.id, p.player.name, p.player.color, is_npc=False))
                     
                     # tell all peers a new player connected
                     self.push_message_to_others(peer, ServerJoin(peer.player.id, peer.player.name, peer.player.color, is_npc=False,))
