@@ -161,9 +161,6 @@ class Bitstream:
         self.read_offset += 1
         return bit
     
-    def read_bit(self):
-        return self.read_bit()
-    
     # o: bytearray that receives the data
     # n: number of bits to read from the Bitstream
     # oo(in bits) output offset in the dst bytearray to write the data to
@@ -337,9 +334,6 @@ class Bitstream:
             self.data[self.write_offset // 8] &= ~(1 << (7 - (self.write_offset % 8)))
         self.write_offset += 1
         self.update_len()
-    
-    def write_bit(self, bool):
-        self.write_bit(bool)
     
     def write_bits(self, i, n, io = 0):
         self.check_resize(n)
