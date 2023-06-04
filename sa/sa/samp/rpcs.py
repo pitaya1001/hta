@@ -1614,7 +1614,7 @@ class InterpolateCamera(Rpc):
         self.cut_type = cut_type
 
     def encode_rpc_payload(self, bs):
-        bs.write_bool(self.pos_set)
+        bs.write_bit(self.pos_set)
         self.from_pos.encode(bs)
         self.to_pos.encode(bs)
         bs.write_u32(self.time)
@@ -1622,7 +1622,7 @@ class InterpolateCamera(Rpc):
 
     @staticmethod
     def decode_rpc_payload(bs):
-        pos_set = bs.read_bool()
+        pos_set = bs.read_bit()
         from_pos = bs.read_vec3()
         to_pos = bs.read_vec3()
         time = bs.read_u32()
@@ -1652,12 +1652,12 @@ class ToggleTextdrawsClickable(Rpc):
         self.color = color
 
     def encode_rpc_payload(self, bs):
-        bs.write_bool(self.clickable)
+        bs.write_bit(self.clickable)
         bs.write_u32(self.color)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        clickable = bs.read_bool()
+        clickable = bs.read_bit()
         color = bs.read_u32()
         return ToggleTextdrawsClickable(clickable, color)
 
@@ -1997,7 +1997,7 @@ checksum: depends on type
 '''
 class ClientCheckResponse(Rpc):
     def __init__(self, type, arg, checksum):
-        super().__init__(RPC.CLIENT_CHECK)
+        super().__init__(RPC.CLIENT_CHECK_RESPONSE)
         self.type = type
         self.arg = arg
         self.checksum = checksum
@@ -2146,7 +2146,7 @@ class GiveTakeDamage(Rpc):
         self.body_part = body_part
 
     def encode_rpc_payload(self, bs):
-        bs.write_bool(self.take)
+        bs.write_bit(self.take)
         bs.write_u16(self.player_id)
         bs.write_float(self.amount)
         bs.write_u32(self.weapon_id)
@@ -2154,7 +2154,7 @@ class GiveTakeDamage(Rpc):
 
     @staticmethod
     def decode_rpc_payload(bs):
-        take = bs.read_bool()
+        take = bs.read_bit()
         player_id = bs.read_u16()
         amount = bs.read_float()
         weapon_id = bs.read_u32()
@@ -2644,26 +2644,26 @@ class InitGame(Rpc):
         self.vehicle_friendly_fire = vehicle_friendly_fire
 
     def encode_rpc_payload(self, bs):
-        bs.write_bool(self.zone_names)
-        bs.write_bool(self.use_cj_walk)
-        bs.write_bool(self.allow_weapons)
-        bs.write_bool(self.limit_global_chat_radius)
+        bs.write_bit(self.zone_names)
+        bs.write_bit(self.use_cj_walk)
+        bs.write_bit(self.allow_weapons)
+        bs.write_bit(self.limit_global_chat_radius)
         bs.write_float(self.global_chat_radius)
-        bs.write_bool(self.stunt_bonus)
+        bs.write_bit(self.stunt_bonus)
         bs.write_float(self.name_tag_draw_distance)
-        bs.write_bool(self.disable_enter_exits)
-        bs.write_bool(self.name_tag_los)
-        bs.write_bool(self.manual_vehicle_engine_and_light)
+        bs.write_bit(self.disable_enter_exits)
+        bs.write_bit(self.name_tag_los)
+        bs.write_bit(self.manual_vehicle_engine_and_light)
         bs.write_u32(self.spawns_available)
         bs.write_u16(self.player_id)
-        bs.write_bool(self.show_player_tags)
+        bs.write_bit(self.show_player_tags)
         bs.write_u32(self.show_player_markers)
         bs.write_u8(self.world_time)
         bs.write_u8(self.weather)
         bs.write_float(self.gravity)
-        bs.write_bool(self.lan_mode)
+        bs.write_bit(self.lan_mode)
         bs.write_u32(self.death_drop_money)
-        bs.write_bool(self.instagib)
+        bs.write_bit(self.instagib)
         bs.write_u32(self.onfoot_rate)
         bs.write_u32(self.incar_rate)
         bs.write_u32(self.weapon_rate)
@@ -2675,26 +2675,26 @@ class InitGame(Rpc):
 
     @staticmethod
     def decode_rpc_payload(bs):
-        zone_names                       = bs.read_bool()
-        use_cj_walk                      = bs.read_bool()
-        allow_weapons                    = bs.read_bool()
-        limit_global_chat_radius         = bs.read_bool()
+        zone_names                       = bs.read_bit()
+        use_cj_walk                      = bs.read_bit()
+        allow_weapons                    = bs.read_bit()
+        limit_global_chat_radius         = bs.read_bit()
         global_chat_radius               = bs.read_float()
-        stunt_bonus                      = bs.read_bool()
+        stunt_bonus                      = bs.read_bit()
         name_tag_draw_distance           = bs.read_float()
-        disable_enter_exits              = bs.read_bool()
-        name_tag_los                     = bs.read_bool()
-        manual_vehicle_engine_and_light  = bs.read_bool()
+        disable_enter_exits              = bs.read_bit()
+        name_tag_los                     = bs.read_bit()
+        manual_vehicle_engine_and_light  = bs.read_bit()
         spawns_available                 = bs.read_u32()
         player_id                        = bs.read_u16()
-        show_player_tags                 = bs.read_bool()
+        show_player_tags                 = bs.read_bit()
         show_player_markers              = bs.read_u32()
         world_time                       = bs.read_u8()
         weather                          = bs.read_u8()
         gravity                          = bs.read_float()
-        lan_mode                         = bs.read_bool()
+        lan_mode                         = bs.read_bit()
         death_drop_money                 = bs.read_u32()
-        instagib                         = bs.read_bool()
+        instagib                         = bs.read_bit()
         onfoot_rate                      = bs.read_u32()
         incar_rate                       = bs.read_u32()
         weapon_rate                      = bs.read_u32()
@@ -3157,11 +3157,11 @@ class ToggleVehicleCollisions(Rpc):
         self.enable = enable
 
     def encode_rpc_payload(self, bs):
-        bs.write_bool(self.enable)
+        bs.write_bit(self.enable)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        enable = bs.read_bool()
+        enable = bs.read_bit()
         return ToggleVehicleCollisions(enable)
 
 class CameraTarget(Rpc):

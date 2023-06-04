@@ -161,7 +161,7 @@ class Bitstream:
         self.read_offset += 1
         return bit
     
-    def read_bool(self):
+    def read_bit(self):
         return self.read_bit()
     
     # o: bytearray that receives the data
@@ -308,10 +308,10 @@ class Bitstream:
         return Quat(w, x, y, z)
     
     def read_norm_quat(self):
-        w_sign = -1 if self.read_bool() else 1
-        x_sign = -1 if self.read_bool() else 1
-        y_sign = -1 if self.read_bool() else 1
-        z_sign = -1 if self.read_bool() else 1
+        w_sign = -1 if self.read_bit() else 1
+        x_sign = -1 if self.read_bit() else 1
+        y_sign = -1 if self.read_bit() else 1
+        z_sign = -1 if self.read_bit() else 1
         x = x_sign * (self.read_u16() / 2**16)
         y = y_sign * (self.read_u16() / 2**16)
         z = z_sign * (self.read_u16() / 2**16)
@@ -338,7 +338,7 @@ class Bitstream:
         self.write_offset += 1
         self.update_len()
     
-    def write_bool(self, bool):
+    def write_bit(self, bool):
         self.write_bit(bool)
     
     def write_bits(self, i, n, io = 0):
@@ -473,10 +473,10 @@ class Bitstream:
         self.write_float(q.z)
     
     def write_norm_quat(self, q):
-        self.write_bool(q.w < 0)
-        self.write_bool(q.x < 0)
-        self.write_bool(q.y < 0)
-        self.write_bool(q.z < 0)
+        self.write_bit(q.w < 0)
+        self.write_bit(q.x < 0)
+        self.write_bit(q.y < 0)
+        self.write_bit(q.z < 0)
         self.write_u16(abs(q.x) * 2**16)
         self.write_u16(abs(q.y) * 2**16)
         self.write_u16(abs(q.z) * 2**16)
