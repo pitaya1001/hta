@@ -1913,9 +1913,9 @@ def write_anim_data(self, anim_data):
     self.write_u16(anim_data.flags)
 
 def read_compressed_anim_data(self):
-    if has_anim := bs.read_bit():
-        id = bs.read_i16()
-        flags = bs.read_u16()
+    if has_anim := self.read_bit():
+        id = self.read_i16()
+        flags = self.read_u16()
         if id > 0:
             return AnimData(id, flags)
     else:

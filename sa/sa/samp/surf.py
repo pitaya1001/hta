@@ -8,7 +8,7 @@ class SurfData:
     def __str__(self):
         return f'<SurfData vehicle_id={self.vehicle_id} offset={self.offset}>'
 
-def read_compressed_surf_data(self, surf_data):
+def read_compressed_surf_data(self):
     if has_surf := self.read_bit():
         vehicle_id = self.read_i16()
         offset = self.read_vec3()

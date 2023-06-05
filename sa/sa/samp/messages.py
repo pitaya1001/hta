@@ -120,7 +120,7 @@ class DriverSync(Message):
         else:
             trailer_id = None
 
-        return DriverSync(driver_id, vehicle_id, pso, key_data, dir, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, siren, landing_gear, trailer_id, extra)
+        return DriverSync(driver_id, vehicle_id, pos, key_data, dir, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, siren, landing_gear, trailer_id, extra)
 
     @staticmethod
     def decode_client_payload(data):
