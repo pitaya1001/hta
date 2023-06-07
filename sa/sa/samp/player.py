@@ -18,3 +18,6 @@ class Player(SaPlayer):
         self.key_data = KeyData(0, 0, 0)
         self.surf_data = None
         self.anim_data = None
+        self.player_pool = None # reference to player pool; it is probably a shared pool
+        self.vehicle_pool = None # reference to vehicle pool; it is probably a shared pool
+        self.logged_in_rcon = False

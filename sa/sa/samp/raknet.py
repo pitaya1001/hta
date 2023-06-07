@@ -66,7 +66,7 @@ class MSG(enum.IntEnum):
     #CONNECTION_ATTEMPT_FAILED         = 29  # 0x1d
     NEW_INCOMING_CONNECTION           = 30  # 0x1e
     #NO_FREE_INCOMING_CONNECTIONS      = 31  # 0x1f
-    DISCONNECTION_NOTIFICATION	      = 32  # 0x20
+    DISCONNECTION_NOTIFICATION        = 32  # 0x20
     #CONNECTION_LOST                   = 33  # 0x21
     CONNECTION_REQUEST_ACCEPTED       = 34  # 0x22
     CONNECTION_BANNED                 = 36  # 0x24
@@ -96,7 +96,7 @@ class MSG(enum.IntEnum):
     TRAILER_SYNC            = 210  # 0xd2
     PASSENGER_SYNC          = 211  # 0xd3
     SPECTATOR_SYNC          = 212  # 0xd4
-    
+
     def is_samp(self):
         return self.value >= MSG.DRIVER_SYNC
 
@@ -121,7 +121,7 @@ class RELIABILITY(enum.IntEnum):
     RELIABLE_SEQUENCED   = 10
     BEGIN                = UNRELIABLE
     END                  = RELIABLE_SEQUENCED
-    
+
     def reliable(self):
         return self.value == RELIABILITY.RELIABLE or self.value == RELIABILITY.RELIABLE_ORDERED or self.value == RELIABILITY.RELIABLE_SEQUENCED
 
@@ -158,22 +158,6 @@ def get_time():
     kernel32.QueryPerformanceCounter(ctypes.byref(timestamp))
     return int(timestamp.value * 1000 / perf_frequency.value)
 
-def pretty_format(self, skip_n):
-    s = f'<{self.__class__.__name__}'
-    for var, value in list(self.__dict__.items())[skip_n:]:
-        if type(value) == float:
-            s += f' {var}={value:.2f}'
-        elif type(value) == str:
-            s += f' {var}={repr(value)}'
-        elif type(value) == bytearray or type(var) == bytes:
-            s += f' {var}=[{value.hex(" ")}]'
-        elif isinstance(value, enum.Enum):
-            s += f' {var}={value.name}({value.value})'
-        else:
-            s += f' {var}={value}'
-    s += '>'
-    return s
-
 class InternalPacket:
     def __init__(self, sequence_number, reliability, ordering_channel, ordering_index, split_id=None, split_index=None, split_count=None, payload=b''):
         self.sequence_number = sequence_number
@@ -184,40 +168,41 @@ class InternalPacket:
         self.split_index = split_index
         self.split_count = split_count
         self.payload = payload
-    
+
     def __str__(self):
         return pretty_format(self, 0)
-    
+
     def encode(self, bs):
         # encode sequence number
         bs.write_u16(self.sequence_number)
-        
-        # encode reliability
+
+        # encode reliability attributes
         bs.write_bits_num(self.reliability, 4)
         if self.reliability.sequenced() or self.reliability.ordered():
             bs.write_bits_num(self.ordering_channel, 5)
             bs.write_u16(self.ordering_index)
-        
+
         # encode split packet attributes
-        is_split_message = self.split_id != None
-        bs.write_bit(is_split_message)
-        if is_split_message:
+        if is_split_message := self.split_id is not None:
+            bs.write_bit(1)
             bs.write_u16(self.split_id)
             bs.write_compressed_u32(self.split_index)
             bs.write_compressed_u32(self.split_count)
-        
+        else:
+            bs.write_bit(0)
+
         # encode payload size
         bs.write_compressed_u16(TO_BITS(len(self.payload)))
-        
+
         # copy payload
         bs.write_aligned(self.payload)
-    
+
     @staticmethod
     def decode(bs):
         # decode sequence number
         sequence_number = bs.read_u16()
-        
-        # decode reliability
+
+        # decode reliability attributes
         reliability = RELIABILITY(bs.read_bits_num(4)) # the enum should raise an exception if the reliability is invalid
         if reliability.sequenced() or reliability.ordered():
             ordering_channel = bs.read_bits_num(5)
@@ -225,8 +210,8 @@ class InternalPacket:
         else:
             ordering_channel = None
             ordering_index = None
-        
-        # decode split packet attributes 
+
+        # decode split packet attributes
         is_split = bs.read_bit()
         if is_split:
             split_id = bs.read_u16()
@@ -239,28 +224,28 @@ class InternalPacket:
             split_id = None
             split_index = None
             split_count = None
-        
+
         # decode payload size
         payload_size = TO_BYTES(bs.read_compressed_u16())
         if payload_size > 1500:
             raise Exception('packet payload too big')
-        
+
         # copy payload
         payload = bytearray(payload_size)
         bs.read_aligned(payload, payload_size)
-        
+
         return InternalPacket(sequence_number, reliability, ordering_channel, ordering_index, split_id, split_index, split_count, payload)
 
 class Message:
     def __init__(self, id):
         self.id = id
-    
+
     def __str__(self):
         return pretty_format(self, 1)
-    
+
     def encode_header(self):
         return self.id.to_bytes(1, 'little')
-    
+
     @staticmethod
     def decode_header(data):
         try:
@@ -275,18 +260,18 @@ class Message:
         except Exception as e:
             e.add_note(f'id=0x{id:x} data={data.hex(" ")}')
             raise e
-    
+
     # in case they are the same
     # note: derived Rpc classes override this
     def encode(self):
         return self.encode_header() + self.encode_payload()
-    
+
     def encode_from_client(self):
         return self.encode_header() + self.id.encode_client_payload(self)
-    
+
     def encode_from_server(self):
         return self.encode_header() + self.id.encode_server_payload(self)
-    
+
     @staticmethod
     def decode_from_client(data):
         id, data = Message.decode_header(data)
@@ -309,7 +294,7 @@ class Rpc(Message):
     def __init__(self, rpc_id):
         super().__init__(MSG.RPC)
         self.rpc_id = rpc_id
-    
+
     def __str__(self):
         return pretty_format(self, 2)
 
@@ -325,32 +310,32 @@ class Rpc(Message):
         # copy rpc payload
         bs.write_bits(payload_bs.data, payload_bs.len)
         return bs.data[:TO_BYTES(bs.len)]
-    
+
     # decode message payload
     @staticmethod
     def decode_client_payload(data):
         rpc_id, bs = Rpc.decode_payload_header(data)
         return rpc_id.decode_client_rpc_payload(bs)
-    
+
     # decode message payload
     @staticmethod
     def decode_server_payload(data):
         rpc_id, bs = Rpc.decode_payload_header(data)
         return rpc_id.decode_server_rpc_payload(bs)
-    
+
     @staticmethod
     def decode_payload_header(data):
         bs = Bitstream(data)
-        
+
         # decode rpc id
         rpc_id = bs.read_u8()
         rpc_id = RPC(rpc_id)
-        
+
         # decode rpc payload size
         rpc_payload_size_in_bits = bs.read_compressed_u32()
         if rpc_payload_size_in_bits > TO_BITS(len(data) + 16):
             raise Exception('bad rpc: invalid size')
-        
+
         return rpc_id, bs
 MSG.RPC.decode_client_payload = Rpc.decode_client_payload
 MSG.RPC.decode_server_payload = Rpc.decode_server_payload
@@ -359,10 +344,10 @@ class OpenConnectionRequest(Message):
     def __init__(self, cookie):
         super().__init__(MSG.OPEN_CONNECTION_REQUEST)
         self.cookie = cookie
-    
+
     def encode_payload(self):
         return struct.pack('<H', self.cookie)
-    
+
     @staticmethod
     def decode_payload(data):
         cookie, = struct.unpack('<H', data)
@@ -372,10 +357,10 @@ class OpenConnectionCookie(Message):
     def __init__(self, cookie):
         super().__init__(MSG.OPEN_CONNECTION_COOKIE)
         self.cookie = cookie
-    
+
     def encode_payload(self):
         return struct.pack('<H', self.cookie)
-    
+
     @staticmethod
     def decode_payload(data):
         cookie, = struct.unpack('<H', data)
@@ -384,10 +369,10 @@ class OpenConnectionCookie(Message):
 class OpenConnectionReply(Message):
     def __init__(self):
         super().__init__(MSG.OPEN_CONNECTION_REPLY)
-    
+
     def encode_payload(self):
         return b'\x00'
-    
+
     @staticmethod
     def decode_payload(data):
         return OpenConnectionReply()
@@ -397,10 +382,10 @@ class NewIncomingConnection(Message):
         super().__init__(MSG.NEW_INCOMING_CONNECTION)
         self.ip = ip
         self.port = port
-    
+
     def encode_payload(self):
         return socket.inet_aton(self.ip) + self.port.to_bytes(2, 'little')
-    
+
     @staticmethod
     def decode_payload(data):
         ip = socket.inet_ntoa(data[:4])
@@ -411,10 +396,10 @@ class ConnectionRequest(Message):
     def __init__(self, password):
         super().__init__(MSG.CONNECTION_REQUEST)
         self.password = password
-    
+
     def encode_payload(self):
         return self.password.encode(SAMP_ENCODING)
-    
+
     @staticmethod
     def decode_payload(data):
         password = data.decode(SAMP_ENCODING)
@@ -427,7 +412,7 @@ class ConnectionRequestAccepted(Message):
         self.port = port
         self.player_id = player_id
         self.cookie = cookie
-    
+
     def encode_payload(self):
         return socket.inet_aton(self.ip) + struct.pack('HHI', self.port, self.player_id, self.cookie)
 
@@ -441,7 +426,7 @@ class InternalPing(Message):
     def __init__(self, time):
         super().__init__(MSG.INTERNAL_PING)
         self.time = time
-    
+
     def encode_payload(self):
         return struct.pack('<I', self.time)
 
@@ -455,7 +440,7 @@ class ConnectedPong(Message):
         super().__init__(MSG.CONNECTED_PONG)
         self.ping_time = ping_time
         self.pong_time = pong_time
-    
+
     def encode_payload(self):
         return struct.pack('<II', self.ping_time, self.pong_time)
 
@@ -467,7 +452,7 @@ class ConnectedPong(Message):
 class Timestamp(Message):
     def __init__(self):
         super().__init__(MSG.TIMESTAMP)
-    
+
     @staticmethod
     def decode_payload(data):
         return Timestamp()
@@ -476,7 +461,7 @@ class ReceivedStaticData(Message):
     def __init__(self, local_static_data):
         super().__init__(MSG.RECEIVED_STATIC_DATA)
         self.local_static_data = local_static_data
-    
+
     def encode_payload(self):
         return self.local_static_data
 
@@ -488,7 +473,7 @@ class ReceivedStaticData(Message):
 class DetectLostConnections(Message):
     def __init__(self):
         super().__init__(MSG.DETECT_LOST_CONNECTIONS)
-    
+
     def encode_payload(self):
         return b''
 
@@ -500,7 +485,7 @@ class AuthKey(Message):
     def __init__(self, key):
         super().__init__(MSG.AUTH_KEY)
         self.key = key
-    
+
     def encode_payload(self):
         return len(self.key).to_bytes(1, 'little') + self.key
 
@@ -516,7 +501,7 @@ The client sees the message "Server closed the connection." when the server send
 class DisconnectionNotification(Message):
     def __init__(self):
         super().__init__(MSG.DISCONNECTION_NOTIFICATION)
-    
+
     def encode_payload(self):
         return b''
 
@@ -530,7 +515,7 @@ class RemoteNewIncomingConnection(Message):
         self.ip = ip
         self.port = port
         self.player_id = player_id
-    
+
     def encode_payload(self):
         return socket.inet_aton(self.ip) + struct.pack('HH', self.port, self.player_id)
 
@@ -546,7 +531,7 @@ class RemoteExistingConnection(Message):
         self.ip = ip
         self.port = port
         self.player_id = player_id
-    
+
     def encode_payload(self):
         return socket.inet_aton(self.ip) + struct.pack('HH', self.port, self.player_id)
 
@@ -559,7 +544,7 @@ class RemoteExistingConnection(Message):
 class ConnectionBanned(Message):
     def __init__(self):
         super().__init__(MSG.CONNECTION_BANNED)
-    
+
     def encode_payload(self):
         return b''
 
@@ -575,25 +560,25 @@ for msg in MSG:
     class_name = ''.join(w.capitalize() for w in msg.name.split('_'))
     try:
         msg_class = getattr(module, class_name)
-        
-        if msg_class.__dict__.get('encode_payload') != None:
+
+        if msg_class.__dict__.get('encode_payload') is not None:
             msg.encode_client_payload = msg_class.encode_payload
             msg.encode_server_payload = msg_class.encode_payload
         else:
-            if msg_class.__dict__.get('encode_client_payload') != None:
+            if msg_class.__dict__.get('encode_client_payload') is not None:
                 msg.encode_client_payload = msg_class.encode_client_payload
-            if msg_class.__dict__.get('encode_server_payload') != None:
+            if msg_class.__dict__.get('encode_server_payload') is not None:
                 msg.encode_server_payload = msg_class.encode_server_payload
-        
-        if msg_class.__dict__.get('decode_payload') != None:
+
+        if msg_class.__dict__.get('decode_payload') is not None:
             msg.decode_client_payload = msg_class.decode_payload
             msg.decode_server_payload = msg_class.decode_payload
         else:
-            if msg_class.__dict__.get('decode_client_payload') != None:
+            if msg_class.__dict__.get('decode_client_payload') is not None:
                 msg.decode_client_payload = msg_class.decode_client_payload
-            if msg_class.__dict__.get('decode_server_payload') != None:
+            if msg_class.__dict__.get('decode_server_payload') is not None:
                 msg.decode_server_payload = msg_class.decode_server_payload
-        
+
     except AttributeError:
         continue
 
@@ -604,7 +589,7 @@ class Range:
     def __init__(self, min=None, max=None):
         self.min = min
         self.max = max
-    
+
     def __str__(self):
         return f'[{self.min},{self.max}]'
 
@@ -612,10 +597,10 @@ class Acknowledgments:
     def __init__(self, ranges=list()):
         # [Range(min,max), Range(min,max), ...]
         self.ranges = ranges
-    
+
     def __str__(self):
         return f'<Acknowledgments {"".join([str(r) for r in self.ranges])}>'
-    
+
     def add(self, n):
         #self.acks.append(number)
         for r in self.ranges:
@@ -641,7 +626,7 @@ class Acknowledgments:
                 return
         # if we get we could not add 'n'; lets make a new range
         self.ranges.append(Range(n, n))
-    
+
     def remove(self, ranges):
         for r in self.ranges[:]:
             for r2 in ranges:
@@ -655,7 +640,7 @@ class Acknowledgments:
                         r.min = r2.max + 1
                     elif r2.max >= r.max: # trim right
                         r.max = r2.min - 1
-    
+
     def encode(self, bs):
         if len(self.ranges) > 0:
             # write ack data
@@ -666,7 +651,7 @@ class Acknowledgments:
                 bs.write_u16(r.min)
                 if r.min != r.max: # only write max if min!=max otherwise it'd redundant
                     bs.write_u16(r.max)
-    
+
     @staticmethod
     def decode(bs):
         ranges = []
@@ -686,21 +671,21 @@ class Acknowledgments:
 class Peer:
     def __init__(self, addr, is_server_peer=True, sendto=None):
         self.addr = addr
-        if sendto != None:
+        if sendto is not None:
             self.sendto = sendto
-        
+
         if is_server_peer:
             self.encode_message = Message.encode_from_client
             self.decode_message = Message.decode_from_server
         else:
             self.encode_message = Message.encode_from_server
             self.decode_message = Message.decode_from_client
-            
+
         self.first_packet_time = None
         self.last_packet_time = None
         self.first_message_time = None
         self.out_bs = Bitstream(capacity=1500)
-        
+
         '''
         For every reliable message received from the peer, we add its sequence
         number to 'send_acks'. For every packet we send, we send as much
@@ -710,37 +695,37 @@ class Peer:
         self.send_acks = Acknowledgments()
         self.expected_acks = Acknowledgments()
         #self.send_acks_lock = threading.Lock()
-        
+
         self.split_packets = []
-        
+
         self.ordered_packet_write_index = [0] * ORDERED_STREAMS_COUNT
         self.ordered_packet_read_index = [0] * ORDERED_STREAMS_COUNT
-        
+
         self.sequenced_packet_write_index = [0] * ORDERED_STREAMS_COUNT
         self.sequenced_packet_read_index = [0] * ORDERED_STREAMS_COUNT
-        
+
         self.ordering_list = [[]] * ORDERED_STREAMS_COUNT
-        
+
         self.send_internal_packet_queues = [queue.Queue()] * NUMBER_OF_PRIORITIES
         #self.local_static_data = bytearray()
-        
-        # incremented for every messaged pushed 
+
+        # incremented for every messaged pushed
         self.sequence_number = 0
-        
+
         # incremented after each split message pushed
         self.split_message_id = 0
-        
+
         self.connected_message_callbacks = [] # callback(message, internal_packet, peer)
         self.unconnected_message_callbacks = [] # callback(message, peer)
-        
+
         self.connected = False
-    
+
     def sendto(self, buffer):
         raise NotImplementedError('You must implement Peer.sendto()')
-    
+
     def push_message(self, message, reliability=RELIABILITY.RELIABLE, priority=PRIORITY.HIGH, ordering_channel=None):
         self.push_encoded_message(self.encode_message(message), reliability, priority, ordering_channel)
-    
+
     def push_encoded_message(self, message_data, reliability=RELIABILITY.RELIABLE, priority=PRIORITY.HIGH, ordering_channel=None):
         if reliability.sequenced():
             ordering_index = self.sequenced_packet_write_index[ordering_channel]
@@ -750,19 +735,19 @@ class Peer:
             self.ordered_packet_write_index[ordering_channel] = (self.ordered_packet_write_index[ordering_channel] + 1) % (2**16)
         else:
             ordering_index = None
-            
+
         # check if message has to be split
         split_message_count = DIV_INT_CEIL(len(message_data), MAX_MESSAGE_SIZE)
         if split_message_count > 1:
             remaining_size = len(message_data)
-            
+
             for i in range(split_message_count):
                 split_size = min(MAX_MESSAGE_SIZE, remaining_size)
                 remaining_size -= MAX_MESSAGE_SIZE
-                
+
                 split_data_offset = i * MAX_MESSAGE_SIZE
                 split_data = message_data[split_data_offset : split_data_offset + split_size]
-                
+
                 packet = InternalPacket(self.sequence_number, reliability, ordering_channel, ordering_index, self.split_message_id, i, split_message_count, split_data)
                 self.sequence_number = (self.sequence_number + 1) % (2**16)
                 self.send_internal_packet_queues[priority].put(packet)
@@ -771,32 +756,32 @@ class Peer:
             packet = InternalPacket(self.sequence_number, reliability, ordering_channel, ordering_index, payload=message_data)
             self.sequence_number = (self.sequence_number + 1) % (2**16)
             self.send_internal_packet_queues[priority].put(packet)
-    
+
     def generate_packet(self, bs):
         #with self.send_acks_lock:
         self.send_acks.encode(bs)
-        
+
         for internal_packet_queue in self.send_internal_packet_queues:
             try:
                 internal_packet = internal_packet_queue.get_nowait()
             except queue.Empty:
                 continue
-            
+
             # check if fits
             internal_packet_size = MAX_INTERNAL_PACKET_HEADER_SIZE + len(internal_packet.payload)
             if bs.write_offset + TO_BITS(internal_packet_size) > TO_BITS(MAX_UDP_PACKET_PAYLOAD_SIZE):
                 internal_packet_queue.put(internal_packet) # put back into queue
                 break
-            
+
             if bs.write_offset == 0: # if nothing was written
                 bs.write_bit(0) # no acks
-            
+
             internal_packet.encode(bs)
-        
+
         self.send_acks.ranges = []
-        
+
         return bs.len > 0
-    
+
     def update(self):
         # process send queue
         # send all available data(acks + messages in send queue) to the socket
@@ -805,7 +790,7 @@ class Peer:
             buffer = self.out_bs.data[:buffer_size]
             self.sendto(buffer)
             self.out_bs.reset()
-    
+
     def handle_unconnected_packet(self, data):
         # if this peer is not connected, a message is present at the
         # start of the packet, instead of acks or internal packet headers
@@ -815,7 +800,7 @@ class Peer:
             e.add_note(f'Peer.handle_packet(data={data.hex(" ")})')
             raise e
         self.handle_unconnected_message(message)
-    
+
     def handle_connected_packet(self, data):
         bs = Bitstream(data)
         try:
@@ -827,11 +812,11 @@ class Peer:
             '''
             # decode acknowledgments in this packet
             acks = Acknowledgments.decode(bs)
-            
+
             # remove these acknowledgments from 'expected_acks'
             self.expected_acks.remove(acks.ranges)
             #todo reliable send list; resend
-            
+
             # decode raknet messages
             # do not decode leftover bits(<16; not necessarily a bad packet)
             while bs.unread_bits_count() > 16:
@@ -840,12 +825,12 @@ class Peer:
                 # into a queue and process it on another thread potentially in
                 # parallel; but because we use asyncio I guess I won't matter if we
                 # just handle it here
-                
+
                 if packet.reliability.reliable():
                     #with self.send_acks_lock:
                     # add message to acknowlegements queue so we can later tell the peer we received this [reliable] message
                     self.send_acks.add(packet.sequence_number)
-                    
+
                 if packet.reliability.sequenced():
                     expected_index = self.sequenced_packet_read_index[packet.ordering_channel]
                     if packet.ordering_index < expected_index:
@@ -854,12 +839,12 @@ class Peer:
                     else:
                         # update expected index
                         self.sequenced_packet_read_index[packet.ordering_channel] = (packet.ordering_index + 1) % (2**16)
-                
-                if packet.split_id != None:
+
+                if packet.split_id is not None:
                     now = time.time()
                     packet.time = now
                     self.split_packets.append(packet)
-                    
+
                     index_sum = 0
                     count = 0
                     for p in self.split_packets[:]:
@@ -867,26 +852,26 @@ class Peer:
                         if now - p.time > 10 * 1000:
                             self.split_packets.remove(p)
                             continue
-                        
+
                         # find related split packets
                         if p.split_id == packet.split_id:
                             index_sum += p.split_index
                             count += 1
-                    
+
                     # check if this was the last part of a split packet
                     if count == packet.split_count and index_sum == sum(range(count)):
                         parts = [None] * count
-                        
+
                         # remove split packets from list
                         for p in self.split_packets[:]:
                             if p.split_id == packet.split_id:
                                 parts[p.split_index] = p
                                 self.split_packets.remove(p)
-                        
+
                         payload = bytearray()
                         for part in parts:
                             payload += part.payload
-                            
+
                         # make internal packet to represent the assembled split messages
                         packet.split_id = packet.split_count = packet.split_index = None
                         packet.payload = payload
@@ -895,16 +880,16 @@ class Peer:
                         continue
                 else: # internal packet contains a whole message; handle it
                     pass
-                
+
                 if packet.reliability.ordered():
                     expected_index = self.ordered_packet_read_index[packet.ordering_channel]
                     if packet.ordering_index == expected_index:
                         self.ordered_packet_read_index[packet.ordering_channel] = (self.ordered_packet_read_index[packet.ordering_channel] + 1) % (2**16)
-                        
+
                         # handle expected ordered packet
                         message = self.decode_message(packet.payload)
                         self.handle_connected_message(message, packet)
-                        
+
                         # handle all adjacent sucessors
                         while True:
                             expected_index = self.ordered_packet_read_index[packet.ordering_channel]
@@ -917,15 +902,15 @@ class Peer:
                             except StopIteration: # no more adjacent sucessors
                                 break
                         continue
-                        
+
                         #0 1 2   4 5 6  3
                     else: # packet out of order
                         if packet.ordering_index < expected_index: # bad packet
                             continue
-                        # save to handle in the future 
+                        # save to handle in the future
                         self.ordering_list[packet.ordering_channel].append(packet)
                         continue
-                
+
                 message = self.decode_message(packet.payload)
                 self.handle_connected_message(message, packet)
         except Exception as e: # bad packet
@@ -942,17 +927,17 @@ class Peer:
         if message.id == MSG.OPEN_CONNECTION_REPLY:
             self.connected = True
         for callback in self.unconnected_message_callbacks:
-            if callback(message, self) == True:
+            if callback(message, self) is True:
                 return
 
     def handle_connected_message(self, message, internal_packet):
         for callback in self.connected_message_callbacks:
-            if callback(message, internal_packet, self) == True:
+            if callback(message, internal_packet, self) is True:
                 return
         if message.id == MSG.INTERNAL_PING:
             ping = message
             self.push_message(ConnectedPong(ping.time, get_time()))
-      
+
     def send_unconnected_message(self, message):
         if message.id == MSG.OPEN_CONNECTION_REPLY:
             self.connected = True

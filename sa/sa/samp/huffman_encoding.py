@@ -30,8 +30,8 @@ class HuffmanNode:
 
 class HuffmanTree:
     def __init__(self, frequency_table):
-        assert(len(frequency_table) == 256)
-        
+        assert len(frequency_table) == 256
+
         # sort table
         leaf_nodes = [None] * 256 # used to generate the encoding table
         sorted_nodes = []
@@ -39,21 +39,21 @@ class HuffmanTree:
             node = HuffmanNode(value=i, weight=max(1, frequency))
             leaf_nodes[i] = node
             bisect.insort_left(sorted_nodes, node, key=lambda e: e.weight)
-        
+
         # generate binary tree
         while True:
             lesser = sorted_nodes.pop(0)
             greater = sorted_nodes.pop(0)
             node = HuffmanNode(value=None, weight=lesser.weight+greater.weight, left=lesser, right=greater)
             lesser.parent = greater.parent = node
-            
+
             if len(sorted_nodes) == 0:
                 self.root_node = node
                 break
-            
+
             # insertion sort
             bisect.insort_left(sorted_nodes, node, key=lambda e:e.weight)
-        
+
         # generate encoding table
         self.encoding_table = [None] * 256
         path = bytearray(256)
@@ -64,7 +64,7 @@ class HuffmanTree:
                 path[path_length] = int(node.parent.left != node)
                 path_length += 1
                 node = node.parent
-            
+
             # write sequence in reverse order
             bs = Bitstream(capacity=path_length)
             for j in range(path_length-1, 0-1, -1):

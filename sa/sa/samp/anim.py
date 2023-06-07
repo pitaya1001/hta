@@ -1887,16 +1887,16 @@ Anim(1712 , 'WUZI'         , 'Wuzi_Walk'             , 70  , 1.17  , 'Wuzi\'s wa
 ]
 
 # generate list to be indexable by animation id
-animations = [None] * (max(anim.index for anim in anim_table if anim.index != None) + 1)
+animations = [None] * (max(anim.index for anim in anim_table if anim.index is not None) + 1)
 for anim in anim_table:
-    if anim.index != None:
+    if anim.index is not None:
         animations[anim.index] = anim
 
 class AnimData:
     def __init__(self, id, flags):
         self.id = id # i16
         self.flags = flags # u16
-    
+
     def __str__(self):
         return f'<AnimData id={self.id} flags=0x{self.flags:x}>'
 
@@ -1922,7 +1922,7 @@ def read_compressed_anim_data(self):
         return None
 
 def write_compressed_anim_data(self, anim_data):
-    if anim_data != None and anim_data.id > 0:
+    if anim_data is not None and anim_data.id > 0:
         self.write_bit(1)
         self.write_i16(anim_data.id)
         self.write_u16(anim_data.flags)

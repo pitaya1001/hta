@@ -40,7 +40,7 @@ class DriverSync(Message):
         self.landing_gear = landing_gear # landing_gear: 1 if retracted, 0 if in normal state
         self.trailer_id = trailer_id # None if invalid
         self.extra = extra # extra(4 bytes): vehicle specific; may be train_speed(float), bike_inclination(float) or hydra_thrust_angle(uint32)
-        if self.extra != None:
+        if self.extra is None:
             self.train_speed = self.bike_inclination = struct.unpack('f', extra)[0]
             self.hydra_thrust_angle = struct.unpack('I', extra)[0]
         else:
@@ -61,19 +61,19 @@ class DriverSync(Message):
         bs.write_bit(self.siren)
         bs.write_bit(self.landing_gear)
 
-        if self.extra != None:
+        if self.extra is None:
             bs.write_bit(1)
             bs.write_buffer(self.extra, 32)
         else:
             bs.write_bit(0)
 
-        if self.trailer_id != None:
+        if self.trailer_id is None:
             bs.write_bit(1)
             bs.write_i16(self.trailer_id)
         else:
             bs.write_bit(0)
 
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
@@ -90,8 +90,8 @@ class DriverSync(Message):
         bs.write_u8(self.siren)
         bs.write_u8(self.landing_gear)
         bs.write_i16(self.trailer_id)
-        bs.write_buffer(self.extra if self.extra != None else bytearray(4), 32)
-        return bs.data[:TO_BYTES(bs.len)]
+        bs.write_buffer(self.extra if self.extra is None else bytearray(4), 32)
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):
@@ -138,13 +138,13 @@ class DriverSync(Message):
         siren = bs.read_u8()
         landing_gear = bs.read_u8()
         trailer_id = bs.read_i16()
-        extra = bs.read_buffer(32)
-
         if trailer_id == -1:
             trailer_id = None
-
+        extra = bs.read_buffer(32)
         return DriverSync(None, vehicle_id, pos, key_data, dir, velocity, vehicle_health, driver_health, driver_armor, driver_weapon_id, siren, landing_gear, trailer_id, extra)
 
+''' C2S
+'''
 class RconCommand(Message):
     def __init__(self, command):
         super().__init__(MSG.RCON_COMMAND)
@@ -152,13 +152,13 @@ class RconCommand(Message):
 
     def encode_client_payload(self):
         bs = Bitstream()
-        bs.write_dynamic_buffer_u32(self.command.encode(SAMP_ENCODING))
-        return bs.data[:TO_BYTES(bs.len)]
+        bs.write_dynamic_buf32(self.command.encode(SAMP_ENCODING))
+        return bs.to_bytes()
 
     @staticmethod
     def decode_client_payload(data):
         bs = Bitstream(data)
-        command = bs.read_dynamic_buffer_u32().decode(SAMP_ENCODING)
+        command = bs.read_dynamic_buf32().decode(SAMP_ENCODING)
         return RconCommand(command)
 
 #class RconResponse(Message):
@@ -197,7 +197,7 @@ class AimSync(Message):
         bs.write_bits_num(self.zoom, 6)
         bs.write_bits_num(self.weapon_state, 2)
         bs.write_u8(self.aspect_ratio)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
@@ -208,8 +208,8 @@ class AimSync(Message):
         bs.write_bits_num(self.zoom, 6)
         bs.write_bits_num(self.weapon_state, 2)
         bs.write_u8(self.aspect_ratio)
-        return bs.data[:TO_BYTES(bs.len)]
-        
+        return bs.to_bytes()
+
     @staticmethod
     def decode_server_payload(data):
         bs = Bitstream(data)
@@ -222,7 +222,7 @@ class AimSync(Message):
         weapon_state = bs.read_bits_num(2)
         aspect_ratio = bs.read_u8()
         return AimSync(player_id, mode, cam_dir, cam_pos, aim_z, weapon_state, zoom, aspect_ratio)
-        
+
     @staticmethod
     def decode_client_payload(data):
         bs = Bitstream(data)
@@ -298,7 +298,7 @@ class BulletSync(Message):
         bs.write_vec3(self.hit_pos)
         bs.write_vec3(self.offset)
         bs.write_u8(self.weapon_id)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
@@ -308,7 +308,7 @@ class BulletSync(Message):
         bs.write_vec3(self.hit_pos)
         bs.write_vec3(self.offset)
         bs.write_u8(self.weapon_id)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):
@@ -363,7 +363,7 @@ class PlayerSync(Message):
         bs.write_compressed_vec3(self.vel)
         bs.write_compressed_surf_data(self.surf_data)
         bs.write_compressed_anim_data(self.anim_data)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
@@ -378,7 +378,7 @@ class PlayerSync(Message):
         bs.write_vec3(self.vel)
         bs.write_surf_data(self.surf_data)
         bs.write_anim_data(self.anim_data)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):
@@ -433,7 +433,7 @@ class MarkersSync(Message):
                 bs.write_i16(int(pos.z))
             else:
                 bs.write_bit(0)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):
@@ -476,7 +476,7 @@ class UnoccupiedVehicleSync(Message):
         bs.write_vec3(self.vel)
         bs.write_vec3(self.angular_vel)
         bs.write_float(self.health)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
@@ -488,7 +488,7 @@ class UnoccupiedVehicleSync(Message):
         bs.write_vec3(self.vel)
         bs.write_vec3(self.angular_vel)
         bs.write_float(self.health)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):
@@ -537,7 +537,7 @@ class TrailerSync(Message):
         bs.write_quat(self.dir)
         bs.write_vec3(self.vel)
         bs.write_vec3(self.turn_vel)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
@@ -546,7 +546,7 @@ class TrailerSync(Message):
         bs.write_quat(self.dir)
         bs.write_vec3(self.vel)
         bs.write_vec3(self.turn_vel)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):
@@ -596,7 +596,7 @@ class PassengerSync(Message):
         bs.write_u8(self.passenger_armor)
         bs.write_key_data(self.key_data)
         bs.write_vec3(self.pos)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
@@ -609,7 +609,7 @@ class PassengerSync(Message):
         bs.write_u8(self.passenger_armor)
         bs.write_key_data(self.key_data)
         bs.write_vec3(self.pos)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):
@@ -653,13 +653,13 @@ class SpectatorSync(Message):
         bs = Bitstream()
         bs.write_compressed_key_data(self.key_data)
         bs.write_vec3(self.pos)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     def encode_client_payload(self):
         bs = Bitstream()
         bs.write_key_data(self.key_data)
         bs.write_vec3(self.pos)
-        return bs.data[:TO_BYTES(bs.len)]
+        return bs.to_bytes()
 
     @staticmethod
     def decode_server_payload(data):

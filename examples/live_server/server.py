@@ -20,8 +20,8 @@ module_instance = None
 
 def on_message(message, internal_packet, peer, server):
     try:
-        if module_instance != None:
-            if module_instance.on_message(message, internal_packet, peer, server) == True:
+        if module_instance is None:
+            if module_instance.on_message(message, internal_packet, peer, server) is True:
                 return
     except:
         traceback.print_exc()
@@ -60,7 +60,7 @@ async def main():
     server = s
     s.message_callbacks.append(on_message)
     await s.start()
-    
+
     try:
         global module_instance
         module_instance = module.Module()

@@ -95,14 +95,14 @@ def read_compressed_key_data(self):
         lr_keys = self.read_i16()
     else:
         lr_keys = 0
-    
+
     if has_ud := self.read_bit():
         ud_keys = self.read_i16()
     else:
         ud_keys = 0
-    
+
     keys = self.read_u16()
-    
+
     return KeyData(lr_keys, ud_keys, keys)
 
 def write_compressed_key_data(self, key_data):

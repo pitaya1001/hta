@@ -3,6 +3,9 @@ import enum
 import random
 import asyncio
 
+SAMP_ENCODING = 'latin1' # iso-8859-1
+#SAMP_ENCODING = 'cp1251' # Windows-1251
+
 DEFAULT_GRAVITY = 0.008
 
 ''' This constant is used for:
@@ -31,21 +34,18 @@ INVALID_ID = 0xffff # 2**16-1
 
 INVALID_WEAPON_ID = 0xffffffff
 
-SAMP_ENCODING = 'latin1' # iso-8859-1
-# cp1251?
-
 class Weapon:
     def __init__(self, id=INVALID_WEAPON_ID, ammo=0):
         self.id = id
         self.ammo = ammo
-    
+
     def __str__(self):
         return f'<Weapon {self.id} - {self.ammo}>'
 
 class Color:
     def __init__(self, value):
         self.value = value
-    
+
     def __str__(self):
         return f'{self.value:08x}'
 
@@ -56,7 +56,7 @@ gxt_table_1 = ' '*32 + '''
  !"#$%&'()*+,-./
 0123456789:;�=�?
 ™ABCDEFGHIJKLMNO
-PQRSTUVWXYZ[\]¡ 
+PQRSTUVWXYZ[\\]¡ 
 `abcdefghijklmno
 pqrstuvwxyz�|$~)
 ÀÁÂÄÆÇÈÉÊËÌÍÎÏÒÓ
@@ -69,7 +69,7 @@ gxt_table_2 = ' '*32 + '''
  !"#$%&'()*+,-./
 0123456789:;�=�?
 ™ABCDEFGHIJKLMNO
-PQRSTUVWXYZ \*¡ 
+PQRSTUVWXYZ \\*¡ 
 `abcdefghijklmno
 pqrstuvwxyz�|$~)
 ÀÁÂÄÆÇÈÉÊËÌÍÎÏÒÓ
@@ -96,47 +96,47 @@ def encode_gxt(s): return str(map(lambda c:gxt_dict[c], s))
 
 
 class SPECIAL_ACTION(enum.IntEnum):
-	NONE          = 0
-	DUCK          = 1
-	JETPACK       = 2
-	ENTER_VEHICLE = 3
-	EXIT_VEHICLE  = 4
-	DANCE1        = 5
-	DANCE2        = 6
-	DANCE3        = 7
-	DANCE4        = 8
-	HANDSUP       = 10 
-	CELLPHONE     = 11
-	SITTING       = 12
-	STOPCELLPHONE = 13
-	BEER          = 20
-	SMOKE         = 21
-	WINE          = 22
-	SPRUNK        = 23
-	CUFFED        = 24
-	CARRY         = 25
-	PISSING       = 68
+    NONE          = 0
+    DUCK          = 1
+    JETPACK       = 2
+    ENTER_VEHICLE = 3
+    EXIT_VEHICLE  = 4
+    DANCE1        = 5
+    DANCE2        = 6
+    DANCE3        = 7
+    DANCE4        = 8
+    HANDSUP       = 10
+    CELLPHONE     = 11
+    SITTING       = 12
+    STOPCELLPHONE = 13
+    BEER          = 20
+    SMOKE         = 21
+    WINE          = 22
+    SPRUNK        = 23
+    CUFFED        = 24
+    CARRY         = 25
+    PISSING       = 68
 
 # Used in two RPCs: SetPlayerFightingStyle and WorldPlayerAdd
 class FIGHTING_STYLE(enum.IntEnum):
-	NORMAL   = 4
-	BOXING   = 5
-	KUNGFU   = 6
-	KNEEHEAD = 7
-	GRABKICK = 15
-	ELBOW    = 16
+    NORMAL   = 4
+    BOXING   = 5
+    KUNGFU   = 6
+    KNEEHEAD = 7
+    GRABKICK = 15
+    ELBOW    = 16
 
 #logging.basicConfig(filename='samp.log',filemode='a',format='%(asctime)s.%(msecs)03d %(message)s',datefmt='%d%m%y-%H%M%S',level=logging.INFO)
 
 def setup_logger(logger_name, file_name):
     formatter = logging.Formatter('%(asctime)s.%(msecs)03d %(message)s','%d%m%y-%H%M%S')
-    handler = logging.FileHandler(file_name)        
+    handler = logging.FileHandler(file_name)
     handler.setFormatter(formatter)
-    
+
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
-    
+
     return logger
 
 main_logger = setup_logger('main', 'samp.log')
@@ -145,3 +145,18 @@ def log(s):
     #logging.info(s)
     main_logger.info(s)
 
+def pretty_format(self, skip_n):
+    s = f'<{self.__class__.__name__}'
+    for var, value in list(self.__dict__.items())[skip_n:]:
+        if type(value) == float:
+            s += f' {var}={value:.2f}'
+        elif type(value) == str:
+            s += f' {var}={repr(value)}'
+        elif type(value) == bytearray or type(var) == bytes:
+            s += f' {var}=[{value.hex(" ")}]'
+        elif isinstance(value, enum.Enum):
+            s += f' {var}={value.name}({value.value})'
+        else:
+            s += f' {var}={value}'
+    s += '>'
+    return s

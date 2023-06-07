@@ -1,5 +1,4 @@
 import asyncio
-import sa
 from sa import *
 from sa.samp import *
 import traceback
@@ -45,16 +44,16 @@ def on_message(message, internal_packet, peer, server):
                     peer.push_message(ChatMessage('Usage: /face <angle>', color=0x999900ff))
             elif rpc.command == '/rhinos':
                 for i in range(10):
-                    peer.push_message(WorldVehicleRemove(100+i))
-                    peer.push_message(WorldVehicleAdd(100+i,VEHICLE.RHINO,Vec3(0 + 20*math.cos(i/10*2*math.pi), 0 + 20*math.sin(i/10*2*math.pi), 3), dir_z=0))
-                    peer.push_message(Show3DTextLabel(100+i, f'Bot Rhino {i}', 0xdddd00dd, Vec3(0,0,0),draw_distance=100, test_los=False, attached_vehicle_id=100+i))
+                    peer.push_message(RemoveVehicle(100+i))
+                    peer.push_message(AddVehicle(100+i, VEHICLE.RHINO, Vec3(0 + 20*math.cos(i/10*2*math.pi), 0 + 20*math.sin(i/10*2*math.pi), 3), dir_z=0))
+                    peer.push_message(Show3DTextLabel(100+i, f'Bot Rhino {i}', 0xdddd00dd, Vec3(0, 0, 0), draw_distance=100, test_los=False, attached_vehicle_id=100+i))
             else:
                 peer.push_message(ChatMessage('Invalid command', color=0xdd0000ff))
 
 async def main():
     s = Server(('127.0.0.1', 7777))
     s.message_callbacks.append(on_message)
-    s.fake_player_list = {'alice':123, 'zebra': 456}
+    s.fake_player_list =  {'alice': 100, 'zebra': 999}
     await s.start()
 
     while True:

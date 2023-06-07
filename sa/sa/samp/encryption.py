@@ -26,9 +26,9 @@ AF ED E7 08 B7 03 E6 8E AB 91 89 3E 2C 96 42 D9
 
 def encrypt_buffer(buffer, server_port):
     encryption_byte = (server_port & 0xff) ^ 0xcc
-    
+
     buffer = bytearray(buffer) # make sure it is mutable
-    
+
     # calculate checksum
     checksum = 0
     for byte in buffer:
@@ -39,7 +39,7 @@ def encrypt_buffer(buffer, server_port):
         buffer[i] = encryption_table[buffer[i]]
         if i % 2 == 1: # if i is odd
             buffer[i] ^= encryption_byte
-    
+
     return checksum.to_bytes(1, 'little') + buffer
 
 decryption_table = bytes.fromhex('''
@@ -63,22 +63,22 @@ A0 74 AC C6 7D B5 E6 E2 C2 7E 67 17 5E E1 B9 3F
 
 def decrypt_buffer(buffer, server_port):
     decryption_byte = (server_port & 0xff) ^ 0xcc
-    
+
     packet_checksum = buffer[0] # save checksum to compare later
-    
+
     buffer = bytearray(buffer[1:]) # make sure it is mutable
-    
+
     # decrypt buffer
     for i in range(len(buffer)):
         if i % 2 == 1: # if i is odd
             buffer[i] ^= decryption_byte
         buffer[i] = decryption_table[buffer[i]]
-    
+
     # calculate checksum
     #checksum = 0
     #for byte in buffer:
     #    checksum ^= byte & 0xaa
     #if checksum != packet_checksum:
     #    print('bad checksum')
-    
+
     return buffer

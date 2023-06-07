@@ -57,4 +57,3 @@ class WEAPON(enum.IntEnum):
     CONNECT           = 200
     DISCONNECT        = 201
     SUICIDE           = 255
-

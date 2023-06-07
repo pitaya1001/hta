@@ -5,6 +5,18 @@ from .common import *
 from .huffman_encoding import default_huffman_tree
 from sa import *
 
+'''
+Overview
+
+When the RPC has no "target" in the name(e.g. SetPos, ) it likely refers to the character of the player the RPC is sent to.
+
+e.g. SetHealth(50) sets the health of the character of the player you send to RPC to.
+If there is 'Player' in the name, it likely refers to a specific player where you may need to specify the player id.
+
+
+Related: list of words related to the RPC; useful for finding something with CTRL+F if you know an alternate name
+'''
+
 # samp rpc ids
 class RPC(enum.IntEnum):
     SET_PLAYER_NAME             = 11  # SetPlayerName
@@ -28,7 +40,7 @@ class RPC(enum.IntEnum):
     CANCEL_EDIT_OBJECT          = 28  # CancelEditObject
     SET_TIME                    = 29  # SetTime
     TOGGLE_CLOCK                = 30  # ToggleClock
-    WORLD_PLAYER_ADD            = 32  # WorldPlayerAdd
+    ADD_PLAYER                  = 32  # AddPlayer
     SET_SHOP_NAME               = 33  # SetShopName
     SET_PLAYER_SKILL_LEVEL      = 34  # SetPlayerSkillLevel
     SET_DRUNK_LEVEL             = 35  # SetDrunkLevel
@@ -52,18 +64,18 @@ class RPC(enum.IntEnum):
     SET_MAP_ICON                = 56  # SetMapIcon
     REMOVE_VEHICLE_COMPONENT    = 57  # RemoveVehicleComponent
     HIDE_3D_TEXT_LABEL          = 58  # Hide3DTextLabel
-    PLAYER_BUBBLE               = 59  # PlayerBubble
+    SET_PLAYER_CHAT_BUBBLE      = 59  # SetPlayerChatBubble
     SEND_GAME_TIME_UPDATE       = 60  # SendGameTimeUpdate
     SHOW_DIALOG                 = 61  # ShowDialog
     DIALOG_RESPONSE             = 62  # DialogResponse
     DESTROY_PICKUP              = 63  # DestroyPickup
     LINK_VEHICLE_TO_INTERIOR    = 65  # LinkVehicleToInterior
-    SET_PLAYER_ARMOR            = 66  # SetPlayerArmor
+    SET_ARMOR                   = 66  # SetArmor
     SET_ARMED_WEAPON            = 67  # SetArmedWeapon
     SET_SPAWN_INFO              = 68  # SetSpawnInfo
     SET_PLAYER_TEAM             = 69  # SetPlayerTeam
-    PUT_PLAYER_IN_VEHICLE       = 70  # PutPlayerInVehicle
-    REMOVE_PLAYER_FROM_VEHICLE  = 71  # RemovePlayerFromVehicle
+    PUT_IN_VEHICLE              = 70  # PutInVehicle
+    REMOVE_FROM_VEHICLE         = 71  # RemoveFromVehicle
     SET_PLAYER_COLOR            = 72  # SetPlayerColor
     SHOW_GAME_TEXT              = 73  # ShowGameText
     FORCE_CLASS_SELECTION       = 74  # ForceClassSelection
@@ -80,10 +92,10 @@ class RPC(enum.IntEnum):
     SET_PLAYER_OBJECT_MATERIAL  = 84  # SetPlayerObjectMaterial
     STOP_FLASH_GANG_ZONE        = 85  # StopFlashGangZone
     APPLY_PLAYER_ANIMATION      = 86  # ApplyPlayerAnimation
-    CLEAR_PLAYER_ANIMATIONS     = 87  # ClearPlayerAnimations
+    CLEAR_PLAYER_ANIMATION      = 87  # ClearPlayerAnimation
     SET_SPECIAL_ACTION          = 88  # SetSpecialAction
     SET_PLAYER_FIGHTING_STYLE   = 89  # SetPlayerFightingStyle
-    SET_PLAYER_VELOCITY         = 90  # SetPlayerVelocity
+    SET_VELOCITY                = 90  # SetVelocity
     SET_VEHICLE_VELOCITY        = 91  # SetVehicleVelocity
     CHAT_MESSAGE                = 93  # ChatMessage
     SET_WORLD_TIME              = 94  # SetWorldTime
@@ -112,7 +124,7 @@ class RPC(enum.IntEnum):
     FLASH_GANG_ZONE             = 121 # FlashGangZone
     STOP_OBJECT                 = 122 # StopObject
     SET_VEHICLE_NUMBER_PLATE    = 123 # SetVehicleNumberPlate
-    TOGGLE_PLAYER_SPECTATING    = 124 # TogglePlayerSpectating
+    TOGGLE_SPECTATE             = 124 # ToggleSpectate
     SPECTATE_PLAYER             = 126 # SpectatePlayer
     SPECTATE_VEHICLE            = 127 # SpectateVehicle
     REQUEST_CLASS               = 128 # RequestClass
@@ -122,7 +134,7 @@ class RPC(enum.IntEnum):
     CONNECTION_REJECTED         = 130 # ConnectionRejected
     PICKED_UP_PICKUP            = 131 # PickedUpPickup
     MENU_SELECT                 = 132 # MenuSelect
-    SET_PLAYER_WANTED_LEVEL     = 133 # SetPlayerWantedLevel
+    SET_WANTED_LEVEL            = 133 # SetWantedLevel
     SHOW_TEXTDRAW               = 134 # ShowTextdraw
     HIDE_TEXTDRAW               = 135 # HideTextdraw
     VEHICLE_DESTROYED           = 136 # VehicleDestroyed
@@ -141,25 +153,25 @@ class RPC(enum.IntEnum):
     PLAYER_EXIT_VEHICLE         = 154 # PlayerExitVehicle
     EXIT_VEHICLE                = 154 # ExitVehicle
     REQUEST_SCORES_AND_PINGS    = 155 # RequestScoresAndPings
-    SET_PLAYER_INTERIOR         = 156 # SetPlayerInterior
+    SET_INTERIOR                = 156 # SetInterior
     SET_CAMERA_POS              = 157 # SetCameraPos
     SET_CAMERA_LOOK_AT          = 158 # SetCameraLookAt
     SET_VEHICLE_POS             = 159 # SetVehiclePos
-    SET_VEHICLE_Z_ANGLE         = 160 # SetVehicleZAngle
+    SET_VEHICLE_DIR_Z           = 160 # SetVehicleDirZ
     SET_VEHICLE_PARAMS          = 161 # SetVehicleParams
     SET_CAMERA_BEHIND_PLAYER    = 162 # SetCameraBehindPlayer
-    WORLD_PLAYER_REMOVE         = 163 # WorldPlayerRemove
-    WORLD_VEHICLE_ADD           = 164 # WorldVehicleAdd
-    WORLD_VEHICLE_REMOVE        = 165 # WorldVehicleRemove
+    REMOVE_PLAYER               = 163 # RemovePlayer
+    ADD_VEHICLE                 = 164 # AddVehicle
+    REMOVE_VEHICLE              = 165 # RemoveVehicle
     DEATH_BROADCAST             = 166 # DeathBroadcast
     TOGGLE_VEHICLE_COLLISIONS   = 167 # ToggleVehicleCollisions
     CAMERA_TARGET               = 168 # CameraTarget
-    ENABLE_PLAYER_CAMERA_TARGET = 170 # EnablePlayerCameraTarget
-    SHOW_ACTOR                  = 171 # ShowActor
-    HIDE_ACTOR                  = 172 # HideActor
+    TOGGLE_CAMERA_TARGET        = 170 # ToggleCameraTarget
+    ADD_ACTOR                   = 171 # AddActor
+    REMOVE_ACTOR                = 172 # RemoveActor
     APPLY_ACTOR_ANIMATION       = 173 # ApplyActorAnimation
     CLEAR_ACTOR_ANIMATION       = 174 # ClearActorAnimation
-    SET_ACTOR_FACING_ANGLE      = 175 # SetActorFacingAngle
+    SET_ACTOR_DIR_Z             = 175 # SetActorDirZ
     SET_ACTOR_POS               = 176 # SetActorPos
     SET_ACTOR_HEALTH            = 178 # SetActorHealth
 
@@ -171,9 +183,8 @@ from .raknet import Rpc
 # C2S means client to server
 
 ''' S2C
-Usually this rpc is sent to all connected players
 player_id: id of the player to change the name
-name: new name
+name: new name; length=[1,24]
 success: should be 1?; if 0 also changes the name so idk what it means
 '''
 class SetPlayerName(Rpc):
@@ -185,20 +196,22 @@ class SetPlayerName(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_dynamic_buffer_u8(self.name.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.name.encode(SAMP_ENCODING))
         bs.write_u8(self.success)
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        name = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         success = bs.read_u8()
         return SetPlayerName(player_id, name, success)
 
 ''' S2C
-Sets the positon of the player this rpc is sent to.
+Sets the positon.
 pos: new position
-e.g. SetPos(Vec3(0.0, 0.0, 2.0))
+e.g. SetPos(Vec3(0.0, 0.0, 3.0))
+e.g. SetPos(SPOT.GROVE)
+Related: SetPlayerPos
 '''
 class SetPos(Rpc):
     def __init__(self, pos):
@@ -214,7 +227,7 @@ class SetPos(Rpc):
         return SetPos(pos)
 
 ''' S2C
-Sets the position of the player this rpc is sent to.
+Sets the position.
 The final Z position may not be the value in the RPC, but rather the Z position of the closest solid object below Z(usually the ground)
 e.g. SetPosFindZ(0, 0, 100) will set the position to Vec3(0, 0, 2) because Z=2 is the height of the floor below Z=100
 '''
@@ -229,7 +242,7 @@ class SetPosFindZ(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         pos = bs.read_vec3()
-        return SetPosFindZ()
+        return SetPosFindZ(pos)
 
 ''' S2C
 Sets the health of the player this rpc is sent to.
@@ -250,21 +263,24 @@ class SetHealth(Rpc):
         return SetHealth(health)
 
 ''' S2C
-Freezes/unfreezes the player this rpc is sent to
-movable: if 1 player may look and move around, otherwise(if 0) it is not possible
+Freezes or unfreezes the player.
+controllable: True or False
+Note: The player cannot look nor move around when frozen.
+Related: TogglePlayerControllable
+e.g. ToggleControllable(False) # freezes the player
 '''
 class ToggleControllable(Rpc):
-    def __init__(self, movable):
+    def __init__(self, controllable):
         super().__init__(RPC.TOGGLE_CONTROLLABLE)
-        self.movable = movable
+        self.controllable = bool(controllable)
 
     def encode_rpc_payload(self, bs):
-        bs.write_u8(self.movable)
+        bs.write_u8(self.controllable)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        movable = bs.read_u8()
-        return ToggleControllable(movable)
+        controllable = bs.read_u8()
+        return ToggleControllable(controllable)
 
 ''' S2C
 Plays/Stops the specified sound for the player this rpc is sent to.
@@ -331,6 +347,7 @@ Give money to or take money from the player this rpc is sent to.
 e.g. GiveMoney(123)
 e.g. GiveMoney(-200)
 e.g. GiveMoney(0) # nothing happens
+Related: GivePlayerMoney
 '''
 class GiveMoney(Rpc):
     def __init__(self, amount):
@@ -357,6 +374,7 @@ e.g. SetDirectionYaw(0.0) # Player faces north
               │
              180°
            (South)
+Related: SetPlayerFacingAngle
 '''
 class SetDirectionYaw(Rpc):
     def __init__(self, angle):
@@ -374,6 +392,7 @@ class SetDirectionYaw(Rpc):
 ''' S2C
 Sets the money amount to zero of the player this rpc is sent to.
 e.g. ResetMoney()
+Related: ResetPlayerMoney
 '''
 class ResetMoney(Rpc):
     def __init__(self):
@@ -389,6 +408,7 @@ class ResetMoney(Rpc):
 ''' S2C
 Removes all weapons from the player this rpc is sent to.
 Note: To remove specific weapons, set ammo to 0 using SetWeaponAmmo.
+Related: ResetPlayerWeapons
 '''
 class RemoveAllWeapons(Rpc):
     def __init__(self):
@@ -406,6 +426,7 @@ Give a weapon with ammo to the player this rpc is sent to.
 See weapons at sa/weapon.py
 e.g. GiveWeapon(WEAPON.M4, 250)
 Note: it accumulates, so giving it twice will double the ammo
+Related: GivePlayerWeapon
 '''
 class GiveWeapon(Rpc):
     def __init__(self, weapon_id, ammo):
@@ -426,12 +447,14 @@ class GiveWeapon(Rpc):
 ''' C2S
 Client sends this rpc when it clicks a player on the scoreboard(TAB)
 player_id: the id of the player that has been clicked
+source: seems to always be 0
+Related: ClickPlayer, OnPlayerClickPlayer
 '''
 class ClickScoreboardPlayer(Rpc):
     def __init__(self, player_id, source):
         super().__init__(RPC.CLICK_SCOREBOARD_PLAYER)
         self.player_id = player_id
-        self.source = source # not sure; 0=mouse click ?
+        self.source = source
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -520,23 +543,23 @@ class ClientJoin(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.version_code)
         bs.write_u8(self.mod)
-        bs.write_dynamic_buffer_u8(self.name.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.name.encode(SAMP_ENCODING))
         bs.write_u32(self.challenge_response)
-        bs.write_dynamic_buffer_u8(self.gpci.encode())
-        bs.write_dynamic_buffer_u8(self.version.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.gpci.encode())
+        bs.write_dynamic_buf8(self.version.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         version_code = bs.read_u32()
         mod = bs.read_u8()
-        name = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         challenge_response = bs.read_u32()
-        gpci = bs.read_dynamic_buffer_u8().decode()
-        version = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        gpci = bs.read_dynamic_buf8().decode()
+        version = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         return ClientJoin(version_code, mod, name, challenge_response, gpci, version)
 
 ''' S2C
-Server sends when a player enters a vehicle
+Makes the specified player do the animation of entering the specified vehicle for the player this RPC is sent to.
 player_id: the id of the player entering the vehicle
 vehicle_id: the id of the vehicle about to be entered
 as_passenger: 0 if entering the driver seat; 1 if entering any passenger seat
@@ -608,6 +631,7 @@ class CancelEditObject(Rpc):
 Sets the world time for the player this rpc is sent to.
 e.g. SetTime(0, 0) # 00:00
 e.g. SetTime(12, 30) # 12:30
+Related: SetPlayerTime
 '''
 class SetTime(Rpc):
     def __init__(self, hour, minute=0):
@@ -626,31 +650,34 @@ class SetTime(Rpc):
         return SetTime(hour, minute)
 
 ''' S2C
-Shows/Hides the clock in the top right corner of the player this rpc is sent to.
-toggle: show=1; hide=0
+Shows or hides the clock in the top right corner of the screen.
+show: True or False
 Note: The time of the clock may be modified by the SetTime RPC
 Note: The time on the clock changes at a rate of one minute per one real world second, so one hour goes by every real world minute
+e.g. ToggleClock(show=True)
 '''
 class ToggleClock(Rpc):
-    def __init__(self, toggle):
+    def __init__(self, show):
         super().__init__(RPC.TOGGLE_CLOCK)
-        self.toggle = toggle
+        self.show = bool(show)
 
     def encode_rpc_payload(self, bs):
-        bs.write_u8(self.toggle)
+        bs.write_u8(self.show)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        toggle = bs.read_u8()
-        return ToggleClock(toggle)
+        show = bs.read_u8()
+        return ToggleClock(show)
 
 ''' S2C
-The server sends this RPC to a client to inform that another player(with id player_id) is in world fov(possibly showing in radar).
-If this rpc is sent twice(without a WorldPlayerRemove in between) it just overwrites the values.
+Adds the specified player to the world.
+If this rpc is sent twice(without a RemovePlayer in between) it just overwrites the values.
+team: valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
+Related: WorldPlayerAdd, PlayerStreamIn
 '''
-class WorldPlayerAdd(Rpc):
-    def __init__(self, player_id, team=0, skin_id=SKIN.CJ, pos=Vec3(0,0,3), facing_angle=0.0, color=0xffffffff, fighting_style=0, skill_level=0):
-        super().__init__(RPC.WORLD_PLAYER_ADD)
+class AddPlayer(Rpc):
+    def __init__(self, player_id, team=None, skin_id=SKIN.CJ, pos=Vec3(0,0,3), facing_angle=0.0, color=0xffffffff, fighting_style=0, skill_level=0):
+        super().__init__(RPC.ADD_PLAYER)
         self.player_id = player_id
         self.team = team
         self.skin_id = SKIN(skin_id)
@@ -662,7 +689,7 @@ class WorldPlayerAdd(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_u8(self.team)
+        bs.write_u8(NO_TEAM_ID if self.team is None else self.team)
         bs.write_u32(self.skin_id)
         bs.write_vec3(self.pos)
         bs.write_float(self.facing_angle)
@@ -674,13 +701,15 @@ class WorldPlayerAdd(Rpc):
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         team = bs.read_u8()
+        if team == NO_TEAM_ID:
+            team = None
         skin_id = bs.read_u32()
         pos = bs.read_vec3()
         facing_angle = bs.read_float()
         color = bs.read_u32()
         fighting_style = bs.read_u8()
         skill_level = bs.read_u16()
-        return WorldPlayerAdd(player_id, team, skin_id, pos, facing_angle, color, fighting_style, skill_level)
+        return AddPlayer(player_id, team, skin_id, pos, facing_angle, color, fighting_style, skill_level)
 
 class SetShopName(Rpc):
     def __init__(self):
@@ -694,18 +723,18 @@ class SetShopName(Rpc):
         return SetShopName()
 
 class WEAPON_SKILL(enum.IntEnum):
-    PISTOL          = 0 
-    PISTOL_SILENCED = 1 
-    DESERT_EAGLE    = 2 
-    SHOTGUN         = 3 
-    SAWNOFF_SHOTGUN = 4 
-    SPAS12_SHOTGUN  = 5 
-    MICRO_UZI       = 6 
-    MP5             = 7 
-    AK47            = 8 
-    M4              = 9 
+    PISTOL          = 0
+    PISTOL_SILENCED = 1
+    DESERT_EAGLE    = 2
+    SHOTGUN         = 3
+    SAWNOFF_SHOTGUN = 4
+    SPAS12_SHOTGUN  = 5
+    MICRO_UZI       = 6
+    MP5             = 7
+    AK47            = 8
+    M4              = 9
     SNIPERRIFLE     = 10
-  
+
 ''' S2C
 Sets the skill level of the specified player.
 player_id: id of the player to set the level of the specified weapon(skill_id)
@@ -762,6 +791,7 @@ Level  Effect
 <=2000 No effect
 >2000  Camera swaying and hard to drive
 >5000  Hidden HUD (i.e. radar, health/armor bar, ...)
+Related: SetPlayerDrunkLevel
 '''
 class SetDrunkLevel(Rpc):
     def __init__(self, level):
@@ -783,8 +813,8 @@ color: color of the text
 pos: position of the text as Vec3
 draw_distance: maximum distance the text is still visible
 test_los: 1 or 0; Test the line-of-sight(LOS) so the text can't be seen through objects
-attached_player_id:nothing attached=INVALID_ID(0xffff); if it is the id of a player then the text is attached to the player; note: the player the 3d text is attached to cannot see it, only others
-attached_vehicle_id:nothing attached=INVALID_ID(0xffff); if it is the id of a vehicle then the text is attached to the player
+attached_player_id:nothing attached=None if it is the id of a player then the text is attached to the player; note: the player the 3d text is attached to cannot see it, only others
+attached_vehicle_id:nothing attached=None; if it is the id of a vehicle then the text is attached to the player
 note: if the text is attached to a player or vehicle, 'pos' becomes an offset relative to the player/vehicle.
 
 Use the Hide3DTextLabel RPC to hide a 3d text label.
@@ -807,8 +837,8 @@ class Show3DTextLabel(Rpc):
         bs.write_vec3(self.pos)
         bs.write_float(self.draw_distance)
         bs.write_u8(self.test_los)
-        bs.write_i16(-1 if self.attached_player_id == None else self.attached_player_id)
-        bs.write_i16(-1 if self.attached_vehicle_id == None else self.attached_vehicle_id)
+        bs.write_i16(-1 if self.attached_player_id is None else self.attached_player_id)
+        bs.write_i16(-1 if self.attached_vehicle_id is None else self.attached_vehicle_id)
         bs.write_huffman_buffer(self.text.encode(SAMP_ENCODING), default_huffman_tree.encoding_table)
 
     @staticmethod
@@ -818,15 +848,15 @@ class Show3DTextLabel(Rpc):
         pos = bs.read_vec3()
         draw_distance = bs.read_float()
         test_los = bs.read_u8()
-        
+
         attached_player_id = bs.read_i16()
         if attached_player_id < 0:
             attached_player_id = None
-        
+
         attached_vehicle_id = bs.read_i16()
         if attached_vehicle_id < 0:
             attached_vehicle_id = None
-        
+
         text = bs.read_huffman_buffer(default_huffman_tree.root_node).decode(SAMP_ENCODING)
         return Show3DTextLabel(label_id, text, color, pos, draw_distance, test_los, attached_player_id, attached_vehicle_id)
 RPC.SHOW_3D_TEXT_LABEL.decode_server_rpc_payload = Show3DTextLabel.decode_rpc_payload
@@ -843,13 +873,13 @@ class DisableCheckpoint(Rpc):
         return DisableCheckpoint()
 
 ''' S2C
-Shows a race checkpoint for the player this RPC is sent to
-type: 0=Normal, 1=Finish, 2=Nothing(Only the checkpoint without anything on it), 3=Air normal, 4=Air finish, 5=Air (rotates and stops), 6=Air (increases, decreases and disappears), 7=Air (swings down and up), 8=Air (swings up and down)
+Shows a race checkpoint.
+type: 0=Normal, 1=Finish, 2=Nothing(Only the checkpoint without anything in it), 3=Air normal(torus), 4=Air finish, 5=Air (rotates and stops), 6=Air (increases, decreases and disappears), 7=Air (swings down and up), 8=Air (swings up and down)
 pos: position of the race checkpoint
 next_pos: this vector is used to set the direction of the arrow of the checkpoint
 diameter: race checkpoint diameter
 Note: only one checkpoint is shown at a time
-Pawn: SetPlayerCheckpoint
+Related: SetPlayerRaceCheckpoint, SetRaceCheckpoint
 '''
 class ShowRaceCheckpoint(Rpc):
     def __init__(self, type, pos, next_pos, diameter):
@@ -874,8 +904,8 @@ class ShowRaceCheckpoint(Rpc):
         return ShowRaceCheckpoint(type, pos, next_pos, diameter)
 
 ''' S2C
-Hides the active race checkpoint(if any) for the player this RPC is sent to.
-Pawn: DisablePlayerCheckpoint
+Hides the active race checkpoint(if any).
+Related: DisablePlayerRaceCheckpoint, DisableRaceCheckpoint
 '''
 class HideRaceCheckpoint(Rpc):
     def __init__(self):
@@ -900,32 +930,37 @@ class GameModeRestart(Rpc):
         return GameModeRestart()
 
 ''' S2C
-Plays an andio stream at 'url' for the player this RPC is sent to.
+Plays an audio stream.
+url: address of the stream
+use_pos: True or False; If false, the audio is played no matter where the player is(i.e. pos and radius are unused).
+pos and radius: specify a sphere; audio is only played this sphere.
+e.g. PlayAudioStream('https://upload.wikimedia.org/wikipedia/commons/a/ac/Pig_grunt_-_Erdie.ogg') makes player hear a pig oinking .
 '''
-class RpcPlayAudioStream(Rpc):
-    def __init__(self, url, pos, radius, use_pos):
+class PlayAudioStream(Rpc):
+    def __init__(self, url, use_pos=False, pos=Vec3(0.0, 0.0, 0.0), radius=0.0):
         super().__init__(RPC.PLAY_AUDIO_STREAM)
         self.url = url
-        self.pos = pos
-        self.radius = float(radius)
         self.use_pos = use_pos
+        self.pos = pos
+        self.radius = radius
 
     def encode_rpc_payload(self, bs):
-        bs.write_dynamic_buffer_u8(self.url.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.url.encode(SAMP_ENCODING))
         bs.write_vec3(self.pos)
         bs.write_float(self.radius)
         bs.write_u8(self.use_pos)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        url = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        url = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         pos = bs.read_vec3()
         radius = bs.read_float()
         use_pos = bs.read_u8()
-        return RpcPlayAudioStream(url, pos, radius, use_pos)
+        return PlayAudioStream(url, use_pos, pos, radius)
 
 ''' S2C
-Stops any audio stream from playing
+Stops an audio stream.
+e.g. StopAudioStream() makes the currently playing stream(if any) stop.
 '''
 class StopAudioStream(Rpc):
     def __init__(self):
@@ -939,31 +974,33 @@ class StopAudioStream(Rpc):
         return StopAudioStream()
 
 ''' S2C
-Removes zero or more objects for the player this RPC is sent to.
-object_model: a specific model id, or -1(matches all model ids)
-pos and radius are used to specify a sphere; objects matching the id are only removed if they are inside the sphere
+Removes zero or more objects.
+model_id: a specific model id, or None(matches all model ids)
+pos and radius are used to specify a sphere; objects are only removed if they are inside this imaginary sphere
 '''
 class RemoveBuilding(Rpc):
     def __init__(self, model_id, pos, radius):
         super().__init__(RPC.REMOVE_BUILDING)
         self.model_id = model_id
         self.pos = pos
-        self.radius = float(radius)
+        self.radius = radius
 
     def encode_rpc_payload(self, bs):
-        bs.write_i32(self.model_id)
+        bs.write_i32(-1 if self.model_id == None else self.model_id)
         bs.write_vec3(self.pos)
         bs.write_float(self.radius)
 
     @staticmethod
     def decode_rpc_payload(bs):
         model_id = bs.read_i32()
+        if model_id == -1:
+            model_id = None
         pos = bs.read_vec3()
         radius = bs.read_float()
         return RemoveBuilding(model_id, pos, radius)
 
 class CreateObject(Rpc):
-    def __init__(self, object_id, model_id, pos, dir, draw_distance, no_camera_col, attached_object=INVALID_ID, attached_vehicle=INVALID_ID, attach_offset=None, attach_dir=None, sync_rotation=None):
+    def __init__(self, object_id, model_id, pos, dir=Vec3(0.0, 0.0, 0.0), draw_distance=100.0, no_camera_col=True, attached_object_id=None, attached_vehicle_id=None, attach_offset=None, attach_dir=None, sync_rotation=None):
         super().__init__(RPC.CREATE_OBJECT)
         self.object_id = object_id
         self.model_id = model_id
@@ -971,8 +1008,8 @@ class CreateObject(Rpc):
         self.dir = dir # Object direction as Vec3
         self.draw_distance = float(draw_distance)
         self.no_camera_col = no_camera_col
-        self.attached_object = attached_object
-        self.attached_vehicle = attached_vehicle
+        self.attached_object_id = attached_object_id
+        self.attached_vehicle_id = attached_vehicle_id
         self.attach_offset = attach_offset
         self.attach_dir = attach_dir
         self.sync_rotation = sync_rotation
@@ -984,9 +1021,9 @@ class CreateObject(Rpc):
         bs.write_vec3(self.dir)
         bs.write_float(self.draw_distance)
         bs.write_u8(self.no_camera_col)
-        bs.write_u16(self.attached_object)
-        bs.write_u16(self.attached_vehicle)
-        if self.attached_object != INVALID_ID or self.attached_vehicle != INVALID_ID:
+        bs.write_i16(-1 if self.attached_object_id is None else self.attached_object_id)
+        bs.write_i16(-1 if self.attached_vehicle_id is None else self.attached_vehicle_id)
+        if self.attached_object_id is not None or self.attached_vehicle_id is not None:
             bs.write_vec3(self.attach_offset)
             bs.write_vec3(self.attach_dir)
             bs.write_u8(self.sync_rotation)
@@ -999,9 +1036,13 @@ class CreateObject(Rpc):
         dir = bs.read_vec3()
         draw_distance = bs.read_float()
         no_camera_col = bs.read_u8()
-        attached_object = bs.read_u16()
-        attached_vehicle = bs.read_u16()
-        if attached_object != INVALID_ID or attached_vehicle != INVALID_ID:
+        attached_object_id = bs.read_i16()
+        if attached_object_id == -1:
+            attached_object_id = None
+        attached_vehicle_id = bs.read_i16()
+        if attached_vehicle_id == -1:
+            attached_vehicle_id = None
+        if attached_object_id is not None or attached_vehicle_id is not None:
             attach_offset = bs.read_vec3()
             attach_dir = bs.read_vec3()
             sync_rotation = bs.read_u8()
@@ -1009,7 +1050,7 @@ class CreateObject(Rpc):
             attach_offset = None
             attach_dir = None
             sync_rotation = None
-        return CreateObject(object_id, model_id, pos, dir, draw_distance, no_camera_col, attached_object, attached_vehicle, attach_offset, attach_dir, sync_rotation)
+        return CreateObject(object_id, model_id, pos, dir, draw_distance, no_camera_col, attached_object_id, attached_vehicle_id, attach_offset, attach_dir, sync_rotation)
 
 class SetObjectPos(Rpc):
     def __init__(self):
@@ -1048,6 +1089,8 @@ class DestroyObject(Rpc):
 
 ''' C2S
 Client sends a command to the server, e.g. "/help"
+command: command.
+Related: PlayerRequestCommandMessage, SendCommand 
 '''
 class RequestChatCommand(Rpc):
     def __init__(self, command):
@@ -1055,11 +1098,11 @@ class RequestChatCommand(Rpc):
         self.command = command
 
     def encode_rpc_payload(self, bs):
-        bs.write_dynamic_buffer_u32(self.command.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf32(self.command.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
-        command = bs.read_dynamic_buffer_u32().decode(SAMP_ENCODING)
+        command = bs.read_dynamic_buf32().decode(SAMP_ENCODING)
         return RequestChatCommand(command)
 
 ''' C2S
@@ -1104,10 +1147,10 @@ class NpcJoin(Rpc):
         return NpcJoin()
 
 ''' S2C
-Adds a message to the kill feed of the client this RPC is sent to
+Adds a message to the kill feed.
 A kill feed message has the following format: KILLER REASON VICTIM
 killer_id: player id of the killer
-victim_id: player id of the victim; -1 for no one
+victim_id: player id of the victim; this value should be None if there is no victim(e.g. suicide)
 reason: a weapon id; see sa/weapon.py
 Note: kill feed(or death chat/window) is the area on the screen on the right(F9)
 '''
@@ -1120,13 +1163,15 @@ class KillFeedMessage(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_i16(self.killer_id)
-        bs.write_i16(self.victim_id)
+        bs.write_i16(-1 if self.victim_id == None else self.victim_id)
         bs.write_u8(self.reason)
 
     @staticmethod
     def decode_rpc_payload(bs):
         killer_id = bs.read_i16()
         victim_id = bs.read_i16()
+        if victim_id == -1:
+            victim_id = None
         reason = bs.read_u8()
         return KillFeedMessage(killer_id, victim_id, reason)
 
@@ -1183,12 +1228,18 @@ class Hide3DTextLabel(Rpc):
         return Hide3DTextLabel(label_id)
 RPC.HIDE_3D_TEXT_LABEL.decode_server_rpc_payload = Hide3DTextLabel.decode_rpc_payload
 
+''' S2C
+Shows a text above the name tag of the specified player.
+player_id: id of the player to create the chat bubble for.
+text: text inside the bubble
+color: The text color
+draw_distance: distance that players are able to see the bubble
+expire_time: time in miliseconds the bubble should be displayed for.
+Note: You can't see your own text bubble. The same applies to attached 3D text labels.
 '''
-Text above a player's name tag.
-'''
-class PlayerBubble(Rpc):
-    def __init__(self, player_id, color, draw_distance, expire_time, text):
-        super().__init__(RPC.PLAYER_BUBBLE)
+class SetPlayerChatBubble(Rpc):
+    def __init__(self, player_id, text, color=0xffffffff, draw_distance=100.0, expire_time=1000):
+        super().__init__(RPC.SET_PLAYER_CHAT_BUBBLE)
         self.player_id = player_id
         self.color = color
         self.draw_distance = draw_distance
@@ -1200,7 +1251,7 @@ class PlayerBubble(Rpc):
         bs.write_u32(self.color)
         bs.write_float(self.draw_distance)
         bs.write_u32(self.expire_time)
-        bs.write_dynamic_buffer_u8(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.text.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
@@ -1208,9 +1259,9 @@ class PlayerBubble(Rpc):
         color = bs.read_u32()
         draw_distance = bs.read_float()
         expire_time = bs.read_u32()
-        #text = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        #text = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         text=''
-        return PlayerBubble(player_id, color, draw_distance, expire_time, text)
+        return SetPlayerChatBubble(player_id, text, color, draw_distance, expire_time)
 
 class SendGameTimeUpdate(Rpc):
     def __init__(self, time):
@@ -1235,7 +1286,8 @@ class DIALOG_STYLE(enum.IntEnum):
 
 ''' S2C
 Max dialog id = 32767 = 2^15-1 = 0x7fff
-A negative id[0x8000, 0xffff] closes any open dialog; use INVALID_ID
+A negative id closes any open dialog
+e.g. ShowDialog(-1, 0, '', '', '', '') ; -1 closes any open dialog
 '''
 class ShowDialog(Rpc):
     def __init__(self, dialog_id, style, title, button1, button2, text):
@@ -1248,36 +1300,36 @@ class ShowDialog(Rpc):
         self.text = text
 
     def encode_rpc_payload(self, bs):
-        bs.write_u16(self.dialog_id)
+        bs.write_i16(self.dialog_id)
         bs.write_u8(self.style)
-        bs.write_dynamic_buffer_u8(self.title.encode(SAMP_ENCODING))
-        bs.write_dynamic_buffer_u8(self.button1.encode(SAMP_ENCODING))
-        bs.write_dynamic_buffer_u8(self.button2.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.title.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.button1.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.button2.encode(SAMP_ENCODING))
         bs.write_huffman_buffer(self.text.encode(SAMP_ENCODING), default_huffman_tree.encoding_table)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        dialog_id = bs.read_u16()
+        dialog_id = bs.read_i16()
         style = DIALOG_STYLE(bs.read_u8())
-        title = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
-        button1 = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
-        button2 = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        title = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        button1 = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        button2 = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         text = bs.read_huffman_buffer(default_huffman_tree.root_node).decode(SAMP_ENCODING)
         return ShowDialog(dialog_id, style, title, button1, button2, text)
+
+class DIALOG_BUTTON(enum.IntEnum):
+    LEFT  = 1
+    RIGHT = 0
 
 '''
 Respond to the current dialog on the screen
 dialog_id:  id of the dialog on the screen
 button: the button selected; DIALOG_BUTTON.LEFT(selected when ENTER is pressed) or DIALOG_BUTTON.RIGHT
-list_index: the index of the row if LIST/TABLE/TABLE_WITH_HEADERS style, otherwise INVALID_ID
+list_index: the index of the row if LIST/TABLE/TABLE_WITH_HEADERS style, otherwise None
 text: depends on the dialog style; textbox input value(INPUT/PASSWORD styles), row text(LIST/TABLE/TABLE_WITH_HEADERS styles), empty string(MESSAGE style)
 '''
-class DIALOG_BUTTON(enum.IntEnum):
-    LEFT  = 1
-    RIGHT = 0
-
 class DialogResponse(Rpc):
-    def __init__(self, dialog_id, button=DIALOG_BUTTON.LEFT, list_index=INVALID_ID, text=''):
+    def __init__(self, dialog_id, button=DIALOG_BUTTON.LEFT, list_index=None, text=''):
         super().__init__(RPC.DIALOG_RESPONSE)
         self.dialog_id = dialog_id
         self.button = button
@@ -1287,15 +1339,17 @@ class DialogResponse(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.dialog_id)
         bs.write_u8(self.button)
-        bs.write_u16(self.list_index)
-        bs.write_dynamic_buffer_u8(self.text.encode(SAMP_ENCODING))
+        bs.write_i16(-1 if self.list_index is None else self.list_index)
+        bs.write_dynamic_buf8(self.text.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         dialog_id = bs.read_u16()
         button = bs.read_u8()
-        list_index = bs.read_u16()
-        text = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        list_index = bs.read_i16()
+        if list_index == -1:
+            list_index = None
+        text = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         return DialogResponse(dialog_id, button, list_index, text)
 
 ''' S2C
@@ -1326,9 +1380,9 @@ class LinkVehicleToInterior(Rpc):
     def decode_rpc_payload(bs):
         return LinkVehicleToInterior()
 
-class SetPlayerArmor(Rpc):
+class SetArmor(Rpc):
     def __init__(self, armor):
-        super().__init__(RPC.SET_PLAYER_ARMOR)
+        super().__init__(RPC.SET_ARMOR)
         self.armor = float(armor)
 
     def encode_rpc_payload(self, bs):
@@ -1337,7 +1391,7 @@ class SetPlayerArmor(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         armor = bs.read_float()
-        return SetPlayerArmor(armor)
+        return SetArmor(armor)
 
 class SetArmedWeapon(Rpc):
     def __init__(self):
@@ -1350,8 +1404,11 @@ class SetArmedWeapon(Rpc):
     def decode_rpc_payload(bs):
         return SetArmedWeapon()
 
+''' S2C
+team: valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
+'''
 class SetSpawnInfo(Rpc):
-    def __init__(self, team=0, skin=SKIN.CJ, pos=Vec3(0.0, 0.0, 2.0), rotation=0.0, weapon1=Weapon(), weapon2=Weapon(), weapon3=Weapon()):
+    def __init__(self, team=None, skin=SKIN.CJ, pos=Vec3(0.0, 0.0, 3.0), rotation=0.0, weapon1=Weapon(), weapon2=Weapon(), weapon3=Weapon()):
         super().__init__(RPC.SET_SPAWN_INFO)
         self.team = team
         self.skin = SKIN(skin)
@@ -1362,9 +1419,9 @@ class SetSpawnInfo(Rpc):
         self.weapon3 = weapon3
 
     def encode_rpc_payload(self, bs):
-        bs.write_u8(self.team)
+        bs.write_u8(NO_TEAM_ID if self.team is None else self.team)
         bs.write_u32(self.skin)
-        bs.write_u8(0) # unused?
+        bs.write_u8(0) # unknown
         bs.write_vec3(self.pos)
         bs.write_float(self.rotation)
         bs.write_u32(self.weapon1.id)
@@ -1377,6 +1434,8 @@ class SetSpawnInfo(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         team = bs.read_u8()
+        if team == NO_TEAM_ID:
+            team = None
         skin = bs.read_u32()
         bs.skip_bits(8) # unused
         pos = bs.read_vec3()
@@ -1392,31 +1451,39 @@ class SetSpawnInfo(Rpc):
         weapon3 = Weapon(weapon3_id, weapon3_ammo)
         return SetSpawnInfo(team, skin, pos, rotation, weapon1, weapon2, weapon3)
 
+''' S2C
+Sets the team of the specified player.
+player_id: id of the player to change the team
+team: new team; valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
+'''
 class SetPlayerTeam(Rpc):
-    def __init__(self, player_id, team):
+    def __init__(self, player_id, team=None):
         super().__init__(RPC.SET_PLAYER_TEAM)
         self.player_id = player_id
         self.team = team
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_u8(self.team)
+        bs.write_u8(NO_TEAM_ID if self.team is None else self.team)
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         team = bs.read_u8()
+        if team == NO_TEAM_ID:
+            team = None
         return SetPlayerTeam(player_id, team)
 
 ''' S2C
-Puts a player in a vehicle
+Puts(i.e. instantly teleports) the player inside the specified vehicle at the specified seat
 vehicle_id: id of the vehicle to put the player in
 seat_id: 0=driver, 1=front passenger, 2=back left passenger, 3=back right passenger, 4+=other seats(e.g. coach)
-WARNING: If the seat is invalid or taken, the player will crash when exiting the vehicle
+Note: The player does not seem to crash if the seat is invalid.
+e.g. PutInVehicle(100, 0) # puts the player as driver
 '''
-class PutPlayerInVehicle(Rpc):
+class PutInVehicle(Rpc):
     def __init__(self, vehicle_id, seat_id):
-        super().__init__(RPC.PUT_PLAYER_IN_VEHICLE)
+        super().__init__(RPC.PUT_IN_VEHICLE)
         self.vehicle_id = vehicle_id
         self.seat_id = seat_id
 
@@ -1428,22 +1495,29 @@ class PutPlayerInVehicle(Rpc):
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
         seat_id = bs.read_u8()
-        return PutPlayerInVehicle(vehicle_id, seat_id)
+        return PutInVehicle(vehicle_id, seat_id)
 
 ''' S2C
-Removes a player from the vehicle they are currently in
+Plays the animation of exiting the vehicle.
+Note: Depending on the vehicle velocity the animation may not play, causing the player not to exit.
+e.g. RemoveFromVehicle() # If the player is a driver in a car, they'll open the door and step out of the car.
 '''
-class RemovePlayerFromVehicle(Rpc):
+class RemoveFromVehicle(Rpc):
     def __init__(self):
-        super().__init__(RPC.REMOVE_PLAYER_FROM_VEHICLE)
+        super().__init__(RPC.REMOVE_FROM_VEHICLE)
 
     def encode_rpc_payload(self, bs):
         pass
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return RemovePlayerFromVehicle()
+        return RemoveFromVehicle()
 
+''' S2C
+Sets the color of the specified player.
+player_id: id of the player to change the color
+color: new color as RRGGBBAA
+'''
 class SetPlayerColor(Rpc):
     def __init__(self, player_id, color):
         super().__init__(RPC.SET_PLAYER_COLOR)
@@ -1477,13 +1551,13 @@ class ShowGameText(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.style)
         bs.write_u32(self.duration)
-        bs.write_dynamic_buffer_u32(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf32(self.text.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         style = bs.read_u32()
         duration = bs.read_u32()
-        text = bs.read_dynamic_buffer_u32().decode(SAMP_ENCODING)
+        text = bs.read_dynamic_buf32().decode(SAMP_ENCODING)
         return ShowGameText(style, duration, text)
 
 class ForceClassSelection(Rpc):
@@ -1577,11 +1651,15 @@ class CreateExplosion(Rpc):
         radius = bs.read_float()
         return CreateExplosion(pos, type, radius)
 
+''' S2C
+Shows or hides the name tag of the specified player.
+show: True or False
+'''
 class TogglePlayerNameTag(Rpc):
     def __init__(self, player_id, show):
         super().__init__(RPC.TOGGLE_PLAYER_NAME_TAG)
         self.player_id = player_id
-        self.show = show
+        self.show = bool(show)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -1636,6 +1714,10 @@ class InterpolateCamera(Rpc):
         cut_type = bs.read_u8()
         return InterpolateCamera(pos_set, from_pos, to_pos, time, cut_type)
 
+''' C2S
+Client sends when it clicks a textdraw
+textdraw_id: id of the textdraw that was clicked
+'''
 class ClickTextdraw(Rpc):
     def __init__(self, textdraw_id):
         super().__init__(RPC.CLICK_TEXTDRAW)
@@ -1649,13 +1731,15 @@ class ClickTextdraw(Rpc):
         textdraw_id = bs.read_u16()
         return ClickTextdraw(textdraw_id)
 
-'''
-Set whether or not textdraw selection is enabled or disabled
+''' S2C
+Determines whether or not the player may click textdraws.
+clickable: True or False
+color: hover color?
 '''
 class ToggleTextdrawsClickable(Rpc):
     def __init__(self, clickable, color):
         super().__init__(RPC.TOGGLE_TEXTDRAWS_CLICKABLE)
-        self.clickable = clickable
+        self.clickable = bool(clickable)
         self.color = color
 
     def encode_rpc_payload(self, bs):
@@ -1705,8 +1789,8 @@ class ApplyPlayerAnimation(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_dynamic_buffer_u8(self.anim_lib.encode(SAMP_ENCODING))
-        bs.write_dynamic_buffer_u8(self.anim_name.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.anim_lib.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.anim_name.encode(SAMP_ENCODING))
         bs.write_float(self.delta)
         bs.write_bit(self.loop)
         bs.write_bit(self.lockx)
@@ -1717,8 +1801,8 @@ class ApplyPlayerAnimation(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        anim_lib = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
-        anim_name = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        anim_lib = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        anim_name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         delta = bs.read_float()
         loop = bs.read_bit()
         lockx = bs.read_bit()
@@ -1727,9 +1811,9 @@ class ApplyPlayerAnimation(Rpc):
         time = bs.read_u32()
         return ApplyPlayerAnimation(player_id, anim_lib, anim_name, delta, loop, lockx, locky, freeze, time)
 
-class ClearPlayerAnimations(Rpc):
+class ClearPlayerAnimation(Rpc):
     def __init__(self, player_id):
-        super().__init__(RPC.CLEAR_PLAYER_ANIMATIONS)
+        super().__init__(RPC.CLEAR_PLAYER_ANIMATION)
         self.player_id = player_id
 
     def encode_rpc_payload(self, bs):
@@ -1738,10 +1822,10 @@ class ClearPlayerAnimations(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        return ClearPlayerAnimations(player_id)
+        return ClearPlayerAnimation(player_id)
 
 ''' S2C
-Sets the special action of the player this RPC is sent to.
+Sets the special action.
 action_id: see the SPECIAL_ACTION enum class
 BUG: Removing jetpacks from players by setting their special action to 0 causes the sound to stay until death.
 '''
@@ -1782,10 +1866,11 @@ class SetPlayerFightingStyle(Rpc):
 ''' S2C
 Sets the velocity of the player this RPC is sent to.
 vel: velocity to set (Vec3)
+Related: SetPlayerVelocity
 '''
-class SetPlayerVelocity(Rpc):
+class SetVelocity(Rpc):
     def __init__(self, vel):
-        super().__init__(RPC.SET_PLAYER_VELOCITY)
+        super().__init__(RPC.SET_VELOCITY)
         self.vel = vel # new player velocity as Vec3
 
     def encode_rpc_payload(self, bs):
@@ -1794,16 +1879,15 @@ class SetPlayerVelocity(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         vel = bs.read_vec3()
-        return SetPlayerVelocity(vel)
+        return SetVelocity(vel)
 
 class VEHICLE_VELOCITY(enum.IntEnum):
     LINEAR  = 0
     ANGULAR = 1
 
 ''' S2C
-Sets the velocity(linear or angular) of the vehicle the player this RPC is sent to is driving.
+Sets the (linear or angular)velocity of the vehicle the player is in.
 This RPC has no affect on un-occupied vehicles and does not affect trains.
-Note: The player this RPC is sent to should be the driver of a vehicle.
 type: either VEHICLE_VELOCITY.LINEAR or VEHICLE_VELOCITY.ANGULAR
 '''
 class SetVehicleVelocity(Rpc):
@@ -1823,9 +1907,11 @@ class SetVehicleVelocity(Rpc):
         return SetVehicleVelocity(type, vel)
 
 ''' S2C
-Adds the specified message to the chatbox of the player this RPC is sent to.
+Sends a chat message.
 message: message
 color: color as RRGGBBAA
+e.g. ChatMessage('Invalid command', 0xdd0000ff) shows as 'Invalid command' (in red)
+Related: SendClientMessage
 '''
 class ChatMessage(Rpc):
     def __init__(self, message, color=0xffffffff):
@@ -1835,12 +1921,12 @@ class ChatMessage(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.color)
-        bs.write_dynamic_buffer_u32(self.message.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf32(self.message.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         color = bs.read_u32()
-        message = bs.read_dynamic_buffer_u32().decode(SAMP_ENCODING)
+        message = bs.read_dynamic_buf32().decode(SAMP_ENCODING)
         return ChatMessage(message, color)
 
 class SetWorldTime(Rpc):
@@ -1946,20 +2032,31 @@ class MoveObject(Rpc):
         target_r = bs.read_vec3()
         return MoveObject(object_id, pos, target, speed, target_r)
 
+''' C2S
+Sent when something is typed in chat that doesn't start with '/'(because it would then be a RequestChatCommand RPC).
+Note: Ideally the server processes the request and sends a PlayerChatMessage RPC to whoever should get our message
+e.g. RequestChatMessage('Hello, I am a player!')
+Related: PlayerRequestChatMessage, ChatMessage 
+'''
 class RequestChatMessage(Rpc):
     def __init__(self, message):
         super().__init__(RPC.REQUEST_CHAT_MESSAGE)
         self.message = message
 
     def encode_rpc_payload(self, bs):
-        bs.write_dynamic_buffer_u8(self.message.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.message.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
-        message = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        message = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         return RequestChatMessage(message)
 RPC.REQUEST_CHAT_MESSAGE.decode_client_rpc_payload = RequestChatMessage.decode_rpc_payload
 
+''' S2C
+Sends a player chat message
+e.g. assuming 'Bob' has id 123, then PlayerChatMessage(123, 'Hello, I am bob!') shows in chat as 'Bob: Hello I am bob'.
+Related: PlayerChatMessage, ChatMessage
+'''
 class PlayerChatMessage(Rpc):
     def __init__(self, player_id, message):
         super().__init__(RPC.PLAYER_CHAT_MESSAGE)
@@ -1968,12 +2065,12 @@ class PlayerChatMessage(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_dynamic_buffer_u8(self.message.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.message.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        message = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        message = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         return PlayerChatMessage(player_id, message)
 RPC.PLAYER_CHAT_MESSAGE.decode_server_rpc_payload = PlayerChatMessage.decode_rpc_payload
 
@@ -2040,6 +2137,7 @@ class ClientCheck(Rpc):
         offset = bs.read_u16()
         size = bs.read_u16()
         return ClientCheck(type, arg, offset, size)
+CLIENT_CHECK.decode_client_rpc_payload = ClientCheck.decode_rpc_payload
 
 ''' C2S
 Responds to a server ClientCheck
@@ -2067,17 +2165,21 @@ class ClientCheckResponse(Rpc):
         return ClientCheckResponse(type, arg, checksum)
 RPC.CLIENT_CHECK_RESPONSE.decode_server_rpc_payload = ClientCheckResponse.decode_rpc_payload
 
+''' S2C
+Enables or disables stunt bonuses.
+enable: True or False
+'''
 class ToggleStuntBonus(Rpc):
     def __init__(self, enable):
         super().__init__(RPC.TOGGLE_STUNT_BONUS)
-        self.enable = enable
+        self.enable = bool(enable)
 
     def encode_rpc_payload(self, bs):
-        bs.write_u8(self.enable)
+        bs.write_bit(self.enable)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        enable = bs.read_u8()
+        enable = bs.read_bit()
         return ToggleStuntBonus(enable)
 
 class SetTextdrawText(Rpc):
@@ -2088,12 +2190,12 @@ class SetTextdrawText(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
-        bs.write_dynamic_buffer_u16(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf16(self.text.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         textdraw_id = bs.read_u16()
-        text = bs.read_dynamic_buffer_u16().decode(SAMP_ENCODING)
+        text = bs.read_dynamic_buf16().decode(SAMP_ENCODING)
         return SetTextdrawText(textdraw_id, text)
 
 class DamageVehicle(Rpc):
@@ -2182,8 +2284,8 @@ class BODY_PART(enum.IntEnum):
 
 ''' C2S
 Client sends when takes or gives damage
-take: 1 if client took damage; 0 if client gave damage
-player_id: id of the player the client damaged; only used if take is 0
+take: 1=took damage; 0=gave damage
+player_id: id of the player the client damaged; only used if take is 0(i.e. client damaged someone)
 amount: amount of damage given or taken
 weapon_id: weapon used to inflict damage; see WEAPON enum
 body_part: body part where damage was applied to; see BODY_PART enum
@@ -2303,32 +2405,39 @@ class SetVehicleNumberPlate(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
-        bs.write_dynamic_buffer_u8(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.text.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
-        text = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        text = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         return SetVehicleNumberPlate(vehicle_id, text)
 
-class TogglePlayerSpectating(Rpc):
-    def __init__(self, spectating):
-        super().__init__(RPC.TOGGLE_PLAYER_SPECTATING)
-        self.spectating = spectating
+''' S2C
+Enables or disables spectator mode.
+enable: True or False
+Note: The server should send SpectatePlayer or SpectateVehicle after sending this RPC
+'''
+class ToggleSpectate(Rpc):
+    def __init__(self, enable):
+        super().__init__(RPC.TOGGLE_SPECTATE)
+        self.enable = bool(enable)
 
     def encode_rpc_payload(self, bs):
-        bs.write_u32(self.spectating)
+        bs.write_u32(self.enable)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        spectating = bs.read_u32()
-        return TogglePlayerSpectating(spectating)
+        enable = bs.read_u32()
+        return ToggleSpectate(enable)
 
 class SPECTATE_MODE(enum.IntEnum):
     NORMAL = 1 # Normal spectate mode (third person point of view). Camera can not be changed
     FIXED = 2 # Use SetPlayerCameraPos after this to position the player's camera, and it will track the player/vehicle set with PlayerSpectatePlayer/PlayerSpectateVehicle
     SIDE = 3 # The camera will be attached to the side of the player/vehicle (like when you're in first-person camera on a bike and you do a wheelie)
 
+''' S2C
+'''
 class SpectatePlayer(Rpc):
     def __init__(self, player_id, mode):
         super().__init__(RPC.SPECTATE_PLAYER)
@@ -2345,6 +2454,8 @@ class SpectatePlayer(Rpc):
         mode = bs.read_u8()
         return SpectatePlayer(player_id, mode)
 
+''' S2C
+'''
 class SpectateVehicle(Rpc):
     def __init__(self, vehicle_id, mode):
         super().__init__(RPC.SPECTATE_VEHICLE)
@@ -2361,6 +2472,8 @@ class SpectateVehicle(Rpc):
         mode = bs.read_u8()
         return SpectateVehicle(vehicle_id, mode)
 
+''' C2S
+'''
 class RequestClass(Rpc):
     def __init__(self, class_id=None):
         super().__init__(RPC.REQUEST_CLASS)
@@ -2374,18 +2487,19 @@ class RequestClass(Rpc):
         class_id = bs.read_u32()
         return RequestClass(class_id)
 
-'''
+''' S2C
 if response is 0 then all other parameters will be ignored
 response: either 1 or 0
+team: new team; valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
 '''
 class RequestClassResponse(Rpc):
     def __init__(self, response, team=None, skin=None, pos=None, rotation=None, weapon1=None, weapon2=None, weapon3=None):
         super().__init__(RPC.REQUEST_CLASS_RESPONSE)
         self.response = response
         self.team = team
-        self.skin = None if (skin == None) else SKIN(skin)
+        self.skin = None if skin is None else SKIN(skin)
         self.pos = pos
-        self.rotation = None if (rotation == None) else float(rotation)
+        self.rotation = rotation
         self.weapon1 = weapon1
         self.weapon2 = weapon2
         self.weapon3 = weapon3
@@ -2394,7 +2508,7 @@ class RequestClassResponse(Rpc):
         bs.write_u8(self.response)
         if self.response == 0:
             return
-        bs.write_u8(self.team)
+        bs.write_u8(NO_TEAM_ID if self.team is None else self.team)
         bs.write_u32(self.skin)
         bs.write_u8(0) # unused
         bs.write_vec3(self.pos)
@@ -2409,8 +2523,7 @@ class RequestClassResponse(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         team = skin = pos = rotation = weapon1 = weapon2 = weapon3 = None
-        response = bs.read_u8()
-        if response == 1:
+        if (response := bs.read_u8()) == 1:
             team = bs.read_u8()
             skin = bs.read_u32()
             bs.skip_bits(8) # unused
@@ -2428,6 +2541,9 @@ class RequestClassResponse(Rpc):
         return RequestClassResponse(response, team, skin, pos, rotation, weapon1, weapon2, weapon3)
 RPC.REQUEST_CLASS_RESPONSE.decode_server_rpc_payload = RequestClassResponse.decode_rpc_payload
 
+''' C2S
+Sent when the client clicks the SPAWN button.
+'''
 class RequestSpawn(Rpc):
     def __init__(self):
         super().__init__(RPC.REQUEST_SPAWN)
@@ -2445,6 +2561,10 @@ class REQUEST_SPAWN(enum.IntEnum):
     ACCEPT = 1
     FORCE  = 2
 
+''' S2C
+When the client sends a RequestSpawn RPC, the server should respond with this RPC.
+Note: The server may send this RPC at any point with the REQUEST_SPAWN.FORCE response to make the client spawn or respawn(if already spawned)
+'''
 class RequestSpawnResponse(Rpc):
     def __init__(self, response):
         super().__init__(RPC.REQUEST_SPAWN_RESPONSE)
@@ -2502,16 +2622,23 @@ class MenuSelect(Rpc):
     def decode_rpc_payload(bs):
         return MenuSelect()
 
-class SetPlayerWantedLevel(Rpc):
-    def __init__(self):
-        super().__init__(RPC.SET_PLAYER_WANTED_LEVEL)
+''' S2C
+Set the wanted level.
+level: new wanted value.
+Related: SetPlayerWantedLevel
+'''
+class SetWantedLevel(Rpc):
+    def __init__(self, level):
+        super().__init__(RPC.SET_WANTED_LEVEL)
+        self.level = level
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u8(self.level)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetPlayerWantedLevel()
+        level = bs.read_u8()
+        return SetWantedLevel(level)
 
 class TEXTDRAW_FLAG(enum.IntEnum):
     BOX = (1 << 7),
@@ -2521,13 +2648,16 @@ class TEXTDRAW_FLAG(enum.IntEnum):
     PROPORTIONAL = (1 << 3),
 
 ''' S2C
+Shows a textdraw.
 The x,y coordinate is the top left coordinate for the text draw area based on a 640x480 "canvas" (irrespective of screen resolution).
 flags: see TEXTDRAW_FLAG
 '''
 class ShowTextdraw(Rpc):
-    def __init__(self, textdraw_id, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, pos, model_id, rot, zoom, color1, color2, text):
+    def __init__(self, textdraw_id, text, pos, flags=0, letter_size=Vec2(1,1), letter_color=0xffffffff, line_size=Vec2(0,0), box_color=0, shadow=0, outline=0, background_color=0x00000000, style=0, clickable=False, model_id=0, rot=Vec3(0.0, 0.0, 0.0), zoom=1.0, color1=0xffff, color2=0xffff):
         super().__init__(RPC.SHOW_TEXTDRAW)
         self.textdraw_id = textdraw_id
+        self.text = text
+        self.pos = pos
         self.flags = flags
         self.letter_size = letter_size
         self.letter_color = letter_color
@@ -2538,13 +2668,11 @@ class ShowTextdraw(Rpc):
         self.background_color = background_color
         self.style = style
         self.clickable = clickable
-        self.pos = pos
         self.model_id = model_id
         self.rot = rot
         self.zoom = zoom
         self.color1 = color1
         self.color2 = color2
-        self.text = text
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
@@ -2565,10 +2693,10 @@ class ShowTextdraw(Rpc):
         bs.write_u16(self.color1)
         bs.write_u16(self.color2)
         try:
-            bs.write_dynamic_buffer_u16(encode_gxt(self.text))
+            bs.write_dynamic_buf16(encode_gxt(self.text))
         except:
             log(f'ShowTextdraw.encode: failed to encode "{self.text}"')
-            bs.write_dynamic_buffer_u16('')
+            bs.write_dynamic_buf16('')
 
     @staticmethod
     def decode_rpc_payload(bs):
@@ -2590,11 +2718,11 @@ class ShowTextdraw(Rpc):
         color1 = bs.read_u16()
         color2 = bs.read_u16()
         try:
-            text = decode_gxt(bs.read_dynamic_buffer_u16())
+            text = decode_gxt(bs.read_dynamic_buf16())
         except Exception as e:
             log('ShowTextdraw.decode; failed to decode; bs={bs.data.hex(" ")}')
             text = ''
-        return ShowTextdraw(textdraw_id, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, pos, model_id, rot, zoom, color1, color2, text)
+        return ShowTextdraw(textdraw_id, text, pos, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, model_id, rot, zoom, color1, color2)
 
 class HideTextdraw(Rpc):
     def __init__(self, textdraw_id):
@@ -2620,26 +2748,33 @@ class VehicleDestroyed(Rpc):
     def decode_rpc_payload(bs):
         return VehicleDestroyed()
 
+''' S2C
+Notifies that the specified player has connected to the server.
+player_id: id(index) of the player in the player pool to be added
+color: color as RRGGBBAA; shows in the scoreboard and ingame as the tag color
+is_npc: True or False
+player_name: name
+'''
 class ServerJoin(Rpc):
-    def __init__(self, player_id, player_name, color=0xffffffff, is_npc=0):
+    def __init__(self, player_id, player_name, color=0xffffffff, is_npc=False):
         super().__init__(RPC.SERVER_JOIN)
         self.player_id = player_id
         self.color = color
-        self.is_npc = is_npc
+        self.is_npc = bool(is_npc)
         self.player_name = player_name
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
         bs.write_u32(self.color)
         bs.write_u8(self.is_npc)
-        bs.write_dynamic_buffer_u8(self.player_name.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.player_name.encode(SAMP_ENCODING))
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         color = bs.read_u32()
         is_npc = bs.read_u8()
-        player_name = bs.read_dynamic_buffer_u8().decode(SAMP_ENCODING)
+        player_name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
         return ServerJoin(player_id, player_name, color, is_npc)
 
 class QUIT_REASON(enum.IntEnum):
@@ -2647,6 +2782,10 @@ class QUIT_REASON(enum.IntEnum):
     QUIT     = 1
     KICK_BAN = 2
 
+''' S2C
+Notifies that the specified player has disconnected from the server.
+reason: a member of QUIT_REASON
+'''
 class ServerQuit(Rpc):
     def __init__(self, player_id, reason=QUIT_REASON.QUIT):
         super().__init__(RPC.SERVER_QUIT)
@@ -2660,9 +2799,12 @@ class ServerQuit(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        reason = QUIT_REASON(bs.read_u8())
+        reason = bs.read_u8()
         return ServerQuit(player_id, reason)
 
+''' S2C
+Usually sent to a client after it sends a ClientJoin RPC.
+'''
 class InitGame(Rpc):
     def __init__(self, zone_names, use_cj_walk, allow_weapons, limit_global_chat_radius, global_chat_radius, stunt_bonus, name_tag_draw_distance, disable_enter_exits, name_tag_los, manual_vehicle_engine_and_light, spawns_available, player_id, show_player_tags, show_player_markers, world_time, weather, gravity, lan_mode, death_drop_money, instagib, onfoot_rate, incar_rate, weapon_rate, multiplier, lag_comp, hostname, vehicle_models, vehicle_friendly_fire):
         super().__init__(RPC.INIT_GAME)
@@ -2721,7 +2863,7 @@ class InitGame(Rpc):
         bs.write_u32(self.weapon_rate)
         bs.write_u32(self.multiplier)
         bs.write_u32(self.lag_comp)
-        bs.write_dynamic_buffer_u8(self.hostname.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.hostname.encode(SAMP_ENCODING))
         bs.write_bits(bytearray(self.vehicle_models), TO_BITS(212))
         bs.write_u32(self.vehicle_friendly_fire)
 
@@ -2789,28 +2931,57 @@ class RemoveMapIcon(Rpc):
         icon_id = bs.read_u8()
         return RemoveMapIcon(icon_id)
 
+''' S2C
+Sets the ammo of the specified weapon.
+e.g. SetWeaponAmmo(WEAPON.MP5, 30) ; Set MP5 ammo to 30; it gives an MP5 if the player did not have one(will not be selected weapon, use GiveWeapon for that)
+e.g. SetWeaponAmmo(WEAPON.MP5, 0) ; Removes MP5
+Related: SetPlayerAmmo
+'''
 class SetWeaponAmmo(Rpc):
-    def __init__(self):
+    def __init__(self, weapon_id, ammo):
         super().__init__(RPC.SET_WEAPON_AMMO)
+        self.weapon_id = weapon_id
+        self.ammo = ammo
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u8(self.weapon_id)
+        bs.write_u16(self.ammo)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetWeaponAmmo()
+        weapon_id = bs.read_u8()
+        ammo = bs.read_u16()
+        return SetWeaponAmmo(weapon_id, ammo)
 
+''' S2C
+Sets the gravity value.
+gravity: new gravity value; default value is 0.008
+e.g. SetGravity(0.008) # resets gravity
+Related: SetPlayerGravity
+'''
 class SetGravity(Rpc):
-    def __init__(self):
+    def __init__(self, gravity):
         super().__init__(RPC.SET_GRAVITY)
+        self.gravity = gravity
+    
+    def __str__(self): # because of precision
+        return f'<SetGravity gravity={self.gravity:.5f}'
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_float(self.gravity)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetGravity()
+        gravity = bs.read_float()
+        return SetGravity(gravity)
 
+''' S2C
+Sets the health of a vehicle.
+vehicle_id: id of the vehicle to set the health
+health: new health value
+Note: A value less than 250.0(represents 25% in a 1000 hp vehicle) makes the vehicle catch on fire and after a few seconds explode.
+Note: If the vehicle is on fire(i.e. hp < 250) and the health is set to a value greater or equal to 250 the fire will disappear and the vehicle won't explode.
+'''
 class SetVehicleHealth(Rpc):
     def __init__(self, vehicle_id, health):
         super().__init__(RPC.SET_VEHICLE_HEALTH)
@@ -2849,7 +3020,7 @@ class DetachTrailerFromVehicle(Rpc):
     def decode_rpc_payload(bs):
         return DetachTrailerFromVehicle()
 
-'''
+''' S2C
 ID  Name                    Type                                   Description (in singleplayer)
 0   EXTRASUNNY_LA           Blue skies                             Los Santos specific weather
 1   SUNNY_LA                Blue skies                             Los Santos specific weather
@@ -2889,7 +3060,7 @@ class SetWeather(Rpc):
         return SetWeather(weather_id)
 
 ''' S2C
-Sets the skin of the specified player
+Sets the skin of the specified player.
 player_id: id of the player to set the skin
 skin_id: id of the skin to set; see the SKIN enumeration
 '''
@@ -2910,8 +3081,8 @@ class SetPlayerSkin(Rpc):
         return SetPlayerSkin(player_id, skin_id)
 
 ''' S2C
-Server sends when a player exits a vehicle
-player_id: the id of the player exiting the vehicle
+Makes the specified player do the animation of exiting the specified vehicle.
+player_id: id of the player that will do the animation
 vehicle_id: the id of the vehicle about to be exited
 '''
 class PlayerExitVehicle(Rpc):
@@ -2948,6 +3119,10 @@ class ExitVehicle(Rpc):
         return ExitVehicle(vehicle_id)
 RPC.EXIT_VEHICLE.decode_client_rpc_payload = ExitVehicle.decode_rpc_payload
 
+''' C2S
+Client sends when the scoreboard is opened.
+Related: OnPlayerRequestScoresAndPings, UpdateScoresAndPings 
+'''
 class RequestScoresAndPings(Rpc):
     def __init__(self):
         super().__init__(RPC.REQUEST_SCORES_AND_PINGS)
@@ -2960,9 +3135,10 @@ class RequestScoresAndPings(Rpc):
         return RequestScoresAndPings()
 
 ''' S2C
-Response for the RequestScoresAndPings client message.
+Response for the RequestScoresAndPings RPC
 Provides scoreboard data(score and pings) for ids
 players = [(id, score, ping), ...]
+Related: SendPlayerScoresAndPings, UpdateScoresAndPings
 '''
 class RequestScoresAndPingsResponse(Rpc):
     def __init__(self, players):
@@ -2987,9 +3163,9 @@ class RequestScoresAndPingsResponse(Rpc):
         return RequestScoresAndPingsResponse(players)
 RPC.REQUEST_SCORES_AND_PINGS.decode_server_rpc_payload = RequestScoresAndPingsResponse.decode_rpc_payload
 
-class SetPlayerInterior(Rpc):
+class SetInterior(Rpc):
     def __init__(self, interior_id):
-        super().__init__(RPC.SET_PLAYER_INTERIOR)
+        super().__init__(RPC.SET_INTERIOR)
         self.interior_id = interior_id
 
     def encode_rpc_payload(self, bs):
@@ -2998,7 +3174,7 @@ class SetPlayerInterior(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         interior_id = bs.read_u8()
-        return SetPlayerInterior(interior_id)
+        return SetInterior(interior_id)
 
 class SetCameraPos(Rpc):
     def __init__(self, pos):
@@ -3049,9 +3225,14 @@ class SetVehiclePos(Rpc):
         pos = bs.read_vec3()
         return SetVehiclePos(vehicle_id, pos)
 
-class SetVehicleZAngle(Rpc):
+''' S2C
+Sets the Z component of the vehicle's direction(orientation).
+angle: new Z value.
+Related: SetVehicleZAngle
+'''
+class SetVehicleDirZ(Rpc):
     def __init__(self, vehicle_id, angle):
-        super().__init__(RPC.SET_VEHICLE_Z_ANGLE)
+        super().__init__(RPC.SET_VEHICLE_DIR_Z)
         self.vehicle_id = vehicle_id
         self.angle = angle
 
@@ -3063,7 +3244,7 @@ class SetVehicleZAngle(Rpc):
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
         angle = bs.read_float()
-        return SetVehicleZAngle(vehicle_id, angle)
+        return SetVehicleDirZ(vehicle_id, angle)
 
 class SetVehicleParams(Rpc):
     def __init__(self, vehicle_id, objective, doors_locked):
@@ -3095,9 +3276,13 @@ class SetCameraBehindPlayer(Rpc):
     def decode_rpc_payload(bs):
         return SetCameraBehindPlayer()
 
-class WorldPlayerRemove(Rpc):
+''' S2C
+Removes the specified player from the world.
+Related: WorldPlayerRemove, PlayerStreamOut
+'''
+class RemovePlayer(Rpc):
     def __init__(self, player_id):
-        super().__init__(RPC.WORLD_PLAYER_REMOVE)
+        super().__init__(RPC.REMOVE_PLAYER)
         self.player_id = player_id
 
     def encode_rpc_payload(self, bs):
@@ -3106,23 +3291,25 @@ class WorldPlayerRemove(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        return WorldPlayerRemove(player_id)
+        return RemovePlayer(player_id)
 
 ''' S2C
-Adds a vehicle to the vehicle pool of the player this RPC is sent to.
-
-Note: If the RPC is sent twice(without WorldVehicleRemove in between) the vehicle just overwritten for the client and a warning message is shown in the chat
+Adds a vehicle to the world.
+vehicle_id: [1, 1999] ; 0 is an invalid id
+Note: If the RPC is sent twice(without RemoveVehicle in between) the vehicle respawns and a warning message is shown in the chat
+Related: WorldVehicleAdd, StreamInVehicle
+e.g. AddVehicle(1, VEHICLE.RHINO, Vec3(0, 0, 3))
 '''
-class WorldVehicleAdd(Rpc):
-    def __init__(self, vehicle_id, model_id, pos, dir_z=0.0, interior_color1=0, interior_color2=0, health=1000.0, interior=0, door_damage_status=0, panel_damage_status=0, light_damage_status=0, tire_damage_status=0, add_siren=False, mods=[0]*14, paint_job=0, body_color1=0, body_color2=0):
-        super().__init__(RPC.WORLD_VEHICLE_ADD)
+class AddVehicle(Rpc):
+    def __init__(self, vehicle_id, model_id, pos, health=1000.0, dir_z=0.0, interior_color1=0, interior_color2=0, interior=0, door_damage_status=0, panel_damage_status=0, light_damage_status=0, tire_damage_status=0, add_siren=False, mods=[0]*14, paint_job=0, body_color1=0, body_color2=0):
+        super().__init__(RPC.ADD_VEHICLE)
         self.vehicle_id = vehicle_id
         self.model_id = model_id # model id of the vehicle; see sa/vehicle.py
         self.pos = pos # position of the vehicle
+        self.health = health
         self.dir_z = dir_z # Z component of the vehicle's direction; a.k.a. "yaw"
         self.interior_color1 = interior_color1
         self.interior_color2 = interior_color2
-        self.health = health
         self.interior = interior
         self.door_damage_status = door_damage_status
         self.panel_damage_status = panel_damage_status
@@ -3169,19 +3356,20 @@ class WorldVehicleAdd(Rpc):
         light_damage_status = bs.read_u8()
         tire_damage_status = bs.read_u8()
         add_siren = bs.read_u8()
-        mods = [bs.read_u8() for i in range(14)]
+        mods = [bs.read_u8() for _ in range(14)]
         paint_job = bs.read_u8()
         body_color1 = bs.read_u32()
         body_color2 = bs.read_u32()
-        return WorldVehicleAdd(vehicle_id, model_id, pos, dir_z, interior_color1, interior_color2, health, interior, door_damage_status, panel_damage_status, light_damage_status, tire_damage_status, add_siren, mods, paint_job, body_color1, body_color2)
+        return AddVehicle(vehicle_id, model_id, pos, health, dir_z, interior_color1, interior_color2, interior, door_damage_status, panel_damage_status, light_damage_status, tire_damage_status, add_siren, mods, paint_job, body_color1, body_color2)
 
 ''' S2C
-Server instructs the client(this rpc is sent to) to remove the specified vehicle from the vehicle pool
+Removes the specified vehicle from the world.
 Note: if the id is invalid, the client ignores the RPC.
+Related: WorldVehicleRemove, StreamOutVehicle
 '''
-class WorldVehicleRemove(Rpc):
+class RemoveVehicle(Rpc):
     def __init__(self, vehicle_id):
-        super().__init__(RPC.WORLD_VEHICLE_REMOVE)
+        super().__init__(RPC.REMOVE_VEHICLE)
         self.vehicle_id = vehicle_id # id of the vehicle to remove
 
     def encode_rpc_payload(self, bs):
@@ -3190,7 +3378,7 @@ class WorldVehicleRemove(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
-        return WorldVehicleRemove(vehicle_id)
+        return RemoveVehicle(vehicle_id)
 
 class DeathBroadcast(Rpc):
     def __init__(self, player_id):
@@ -3205,10 +3393,14 @@ class DeathBroadcast(Rpc):
         player_id = bs.read_u16()
         return DeathBroadcast(player_id)
 
+''' S2C
+Enables or disables vehicle collisions.
+enable: True or False
+'''
 class ToggleVehicleCollisions(Rpc):
     def __init__(self, enable):
         super().__init__(RPC.TOGGLE_VEHICLE_COLLISIONS)
-        self.enable = enable
+        self.enable = bool(enable)
 
     def encode_rpc_payload(self, bs):
         bs.write_bit(self.enable)
@@ -3218,6 +3410,8 @@ class ToggleVehicleCollisions(Rpc):
         enable = bs.read_bit()
         return ToggleVehicleCollisions(enable)
 
+''' C2S
+'''
 class CameraTarget(Rpc):
     def __init__(self):
         super().__init__(RPC.CAMERA_TARGET)
@@ -3229,93 +3423,195 @@ class CameraTarget(Rpc):
     def decode_rpc_payload(bs):
         return CameraTarget()
 
-class ShowActor(Rpc):
-    def __init__(self):
-        super().__init__(RPC.SHOW_ACTOR)
+''' S2C
+Enable or disables camera targeting functions to the specified.
+'''
+class ToggleCameraTarget(Rpc):
+    def __init__(self, enable):
+        super().__init__(RPC.TOGGLE_CAMERA_TARGET)
+        self.enable = bool(enable)
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_bit(self.enable)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return ShowActor()
+        enable = bs.read_bit()
+        return ToggleCameraTarget(enable)
 
-class HideActor(Rpc):
-    def __init__(self):
-        super().__init__(RPC.HIDE_ACTOR)
+''' S2C
+Adds an actor to the world.
+actor_id: id of the actor; [0, 999]
+Related: CreateActor, ShowActor, ShowActorForPlayer
+'''
+class AddActor(Rpc):
+    def __init__(self, actor_id, pos, skin_id=SKIN.CJ, dir_z=0.0, health=100.0, invulnerable=True):
+        super().__init__(RPC.ADD_ACTOR)
+        self.actor_id = actor_id
+        self.pos = pos
+        self.skin_id = skin_id
+        self.dir_z = dir_z
+        self.health = health
+        self.invulnerable = invulnerable
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u16(self.actor_id)
+        bs.write_u32(self.skin_id)
+        bs.write_vec3(self.pos)
+        bs.write_float(self.dir_z)
+        bs.write_float(self.health)
+        bs.write_u8(self.invulnerable)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return HideActor()
+        actor_id = bs.read_u16()
+        skin_id = bs.read_u32()
+        pos = bs.read_vec3()
+        dir_z = bs.read_float()
+        health = bs.read_float()
+        invulnerable = bs.read_u8()
+        return AddActor(actor_id, pos, skin_id, dir_z, health, invulnerable)
 
+''' S2C
+Removes the specified actor from the world.
+actor_id: id of the actor to hide
+Related: DestroyActor, HideActor, HideActorForPlayer
+'''
+class RemoveActor(Rpc):
+    def __init__(self, actor_id):
+        super().__init__(RPC.REMOVE_ACTOR)
+        self.actor_id = actor_id
+
+    def encode_rpc_payload(self, bs):
+        bs.write_u16(self.actor_id)
+
+    @staticmethod
+    def decode_rpc_payload(bs):
+        actor_id = bs.read_u16()
+        return RemoveActor(actor_id)
+
+''' S2C
+Makes the actor play an animation.
+actor_id: id of the actor.
+
+'''
 class ApplyActorAnimation(Rpc):
-    def __init__(self):
+    def __init__(self, actor_id, anim_lib, anim_name, delta, loop, lock_x, lock_y, freeze, time):
         super().__init__(RPC.APPLY_ACTOR_ANIMATION)
+        self.actor_id = actor_id
+        self.anim_lib = anim_lib
+        self.anim_name = anim_name
+        self.delta = delta
+        self.loop = loop
+        self.lock_x = lock_x
+        self.lock_y = lock_y
+        self.freeze = freeze
+        self.time = time
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u16(self.actor_id)
+        bs.write_dynamic_buf8(self.anim_lib.encode(SAMP_ENCODING))
+        bs.write_dynamic_buf8(self.anim_name.encode(SAMP_ENCODING))
+        bs.write_float(self.delta)
+        bs.write_bit(self.loop)
+        bs.write_bit(self.lock_x)
+        bs.write_bit(self.lock_y)
+        bs.write_bit(self.freeze)
+        bs.write_float(self.time)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return ApplyActorAnimation()
+        actor_id = bs.read_u16()
+        anim_lib = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        anim_name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        delta = bs.read_float()
+        loop = bs.read_bit()
+        lock_x = bs.read_bit()
+        lock_y = bs.read_bit()
+        freeze = bs.read_bit()
+        time = bs.read_float()
+        return ApplyActorAnimation(actor_id, anim_lib, anim_name, delta, loop, lock_x, lock_y, freeze, time)
 
+''' S2C
+Stop any animation the actor is playing.
+actor_id: id of the actor
+'''
 class ClearActorAnimation(Rpc):
-    def __init__(self):
+    def __init__(self, actor_id):
         super().__init__(RPC.CLEAR_ACTOR_ANIMATION)
+        self.actor_id = actor_id
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u16(self.actor_id)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return ClearActorAnimation()
+        actor_id = bs.read_u16()
+        return ClearActorAnimation(actor_id)
 
-class SetActorFacingAngle(Rpc):
-    def __init__(self):
-        super().__init__(RPC.SET_ACTOR_FACING_ANGLE)
+''' S2C
+Sets the Z component of the actor's direction(orientation)
+actor_id: id of the actor
+angle: new value for Z
+Related: SetActorFacingAngle
+'''
+class SetActorDirZ(Rpc):
+    def __init__(self, actor_id, angle):
+        super().__init__(RPC.SET_ACTOR_DIR_Z)
+        self.actor_id = actor_id
+        self.angle = angle
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u16(self.actor_id)
+        bs.write_float(self.angle)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetActorFacingAngle()
+        actor_id = bs.read_u16()
+        angle = bs.read_float()
+        return SetActorDirZ(actor_id, angle)
 
+''' S2C
+Sets the position of the actor.
+actor_id: id of the actor.
+pos: new position value
+'''
 class SetActorPos(Rpc):
-    def __init__(self):
+    def __init__(self, actor_id, pos):
         super().__init__(RPC.SET_ACTOR_POS)
+        self.actor_id = actor_id
+        self.pos = pos
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u16(self.actor_id)
+        bs.write_vec3(self.pos)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetActorPos()
+        actor_id = bs.read_u16()
+        pos = bs.read_vec3()
+        return SetActorPos(actor_id, pos)
 
+''' S2C
+Sets the health of the actor.
+actor_id: id of the actor.
+health: new health value.
+'''
 class SetActorHealth(Rpc):
-    def __init__(self):
+    def __init__(self, actor_id, health):
         super().__init__(RPC.SET_ACTOR_HEALTH)
+        self.actor_id = actor_id
+        self.health = health
 
     def encode_rpc_payload(self, bs):
-        pass
+        bs.write_u16(self.actor_id)
+        bs.write_float(self.health)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        return SetActorHealth()
-
-class EnablePlayerCameraTarget(Rpc):
-    def __init__(self):
-        super().__init__(RPC.ENABLE_PLAYER_CAMERA_TARGET)
-
-    def encode_rpc_payload(self, bs):
-        pass
-
-    @staticmethod
-    def decode_rpc_payload(bs):
-        return EnablePlayerCameraTarget()
+        actor_id = bs.read_u16()
+        health = bs.read_float()
+        return SetActorHealth(actor_id, health)
 
 import inspect
 module = inspect.getmodule(inspect.currentframe())
@@ -3324,9 +3620,9 @@ for rpc in RPC:
     class_name = ''.join(w.capitalize() for w in rpc.name.split('_'))
     try:
         rpc_class = getattr(module, class_name)
-        if rpc.__dict__.get('decode_client_rpc_payload') == None:
+        if rpc.__dict__.get('decode_client_rpc_payload') is None:
             rpc.decode_client_rpc_payload = rpc_class.decode_rpc_payload
-        if rpc.__dict__.get('decode_server_rpc_payload') == None:
+        if rpc.__dict__.get('decode_server_rpc_payload') is None:
             rpc.decode_server_rpc_payload = rpc_class.decode_rpc_payload
     except AttributeError:
         continue

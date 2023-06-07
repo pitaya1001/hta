@@ -8,7 +8,7 @@ class Player:
         self.cam_pos = None # camera position as Vec3
         self.cam_dir = None # camera direction as Vec3(Euler angles)
         self.skin_id = None
-        self.weapon_id = None
+        self.weapon_id = None # id of the weapon being held
         self.fighting_style = None
         self.skill_level = None
         self.vehicle = None # the vehicle the player is inside(as driver or passenger), or None if not in a vehicle

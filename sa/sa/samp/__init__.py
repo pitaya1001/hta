@@ -5,3 +5,4 @@ from .rpcs import *
 from .player import *
 from .common import *
 from .anim import *
+from .spots import *
