@@ -196,13 +196,13 @@ class SetPlayerName(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_dynamic_buf8(self.name.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.name)
         bs.write_u8(self.success)
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        name = bs.read_dynamic_str8()
         success = bs.read_u8()
         return SetPlayerName(player_id, name, success)
 
@@ -543,19 +543,19 @@ class ClientJoin(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.version_code)
         bs.write_u8(self.mod)
-        bs.write_dynamic_buf8(self.name.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.name)
         bs.write_u32(self.challenge_response)
-        bs.write_dynamic_buf8(self.gpci.encode())
-        bs.write_dynamic_buf8(self.version.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.gpci)
+        bs.write_dynamic_str8(self.version)
 
     @staticmethod
     def decode_rpc_payload(bs):
         version_code = bs.read_u32()
         mod = bs.read_u8()
-        name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        name = bs.read_dynamic_str8()
         challenge_response = bs.read_u32()
-        gpci = bs.read_dynamic_buf8().decode()
-        version = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        gpci = bs.read_dynamic_str8()
+        version = bs.read_dynamic_str8()
         return ClientJoin(version_code, mod, name, challenge_response, gpci, version)
 
 ''' S2C
@@ -673,6 +673,7 @@ class ToggleClock(Rpc):
 Adds the specified player to the world.
 If this rpc is sent twice(without a RemovePlayer in between) it just overwrites the values.
 team: valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
+Note: The server MUST send the ServerJoin RPC before AddPlayer; i.e. logically a player has to first join the server, then be added to the world.
 Related: WorldPlayerAdd, PlayerStreamIn
 '''
 class AddPlayer(Rpc):
@@ -683,7 +684,7 @@ class AddPlayer(Rpc):
         self.skin_id = SKIN(skin_id)
         self.pos = pos
         self.facing_angle = facing_angle
-        self.color = color
+        self.color = Color(color)
         self.fighting_style = fighting_style
         self.skill_level = skill_level
 
@@ -771,13 +772,13 @@ class SetPlayerSkillLevel(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
         bs.write_u32(self.skill_id)
-        bs.write_u32(self.level)
+        bs.write_u16(self.level)
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         skill_id = bs.read_u32()
-        level = bs.read_u32()
+        level = bs.read_u16()
         return SetPlayerSkillLevel(player_id, skill_id, level)
 
 ''' S2C
@@ -823,7 +824,7 @@ class Show3DTextLabel(Rpc):
     def __init__(self, label_id, text, color, pos, draw_distance=50.0, test_los=1, attached_player_id=None, attached_vehicle_id=None):
         super().__init__(RPC.SHOW_3D_TEXT_LABEL)
         self.label_id = label_id
-        self.color = color
+        self.color = Color(color)
         self.pos = pos
         self.draw_distance = draw_distance
         self.test_los = test_los
@@ -945,14 +946,14 @@ class PlayAudioStream(Rpc):
         self.radius = radius
 
     def encode_rpc_payload(self, bs):
-        bs.write_dynamic_buf8(self.url.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.url)
         bs.write_vec3(self.pos)
         bs.write_float(self.radius)
         bs.write_u8(self.use_pos)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        url = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        url = bs.read_dynamic_str8()
         pos = bs.read_vec3()
         radius = bs.read_float()
         use_pos = bs.read_u8()
@@ -1098,11 +1099,11 @@ class RequestChatCommand(Rpc):
         self.command = command
 
     def encode_rpc_payload(self, bs):
-        bs.write_dynamic_buf32(self.command.encode(SAMP_ENCODING))
+        bs.write_dynamic_str32(self.command)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        command = bs.read_dynamic_buf32().decode(SAMP_ENCODING)
+        command = bs.read_dynamic_str32()
         return RequestChatCommand(command)
 
 ''' C2S
@@ -1181,7 +1182,7 @@ class SetMapIcon(Rpc):
         self.icon_id = icon_id
         self.pos = pos
         self.type = type
-        self.color = color
+        self.color = Color(color)
         self.style = style
 
     def encode_rpc_payload(self, bs):
@@ -1241,7 +1242,7 @@ class SetPlayerChatBubble(Rpc):
     def __init__(self, player_id, text, color=0xffffffff, draw_distance=100.0, expire_time=1000):
         super().__init__(RPC.SET_PLAYER_CHAT_BUBBLE)
         self.player_id = player_id
-        self.color = color
+        self.color = Color(color)
         self.draw_distance = draw_distance
         self.expire_time = expire_time
         self.text = text
@@ -1251,7 +1252,7 @@ class SetPlayerChatBubble(Rpc):
         bs.write_u32(self.color)
         bs.write_float(self.draw_distance)
         bs.write_u32(self.expire_time)
-        bs.write_dynamic_buf8(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.text)
 
     @staticmethod
     def decode_rpc_payload(bs):
@@ -1259,7 +1260,7 @@ class SetPlayerChatBubble(Rpc):
         color = bs.read_u32()
         draw_distance = bs.read_float()
         expire_time = bs.read_u32()
-        #text = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        #text = bs.read_dynamic_str8()
         text=''
         return SetPlayerChatBubble(player_id, text, color, draw_distance, expire_time)
 
@@ -1302,18 +1303,18 @@ class ShowDialog(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_i16(self.dialog_id)
         bs.write_u8(self.style)
-        bs.write_dynamic_buf8(self.title.encode(SAMP_ENCODING))
-        bs.write_dynamic_buf8(self.button1.encode(SAMP_ENCODING))
-        bs.write_dynamic_buf8(self.button2.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.title)
+        bs.write_dynamic_str8(self.button1)
+        bs.write_dynamic_str8(self.button2)
         bs.write_huffman_buffer(self.text.encode(SAMP_ENCODING), default_huffman_tree.encoding_table)
 
     @staticmethod
     def decode_rpc_payload(bs):
         dialog_id = bs.read_i16()
         style = DIALOG_STYLE(bs.read_u8())
-        title = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
-        button1 = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
-        button2 = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        title = bs.read_dynamic_str8()
+        button1 = bs.read_dynamic_str8()
+        button2 = bs.read_dynamic_str8()
         text = bs.read_huffman_buffer(default_huffman_tree.root_node).decode(SAMP_ENCODING)
         return ShowDialog(dialog_id, style, title, button1, button2, text)
 
@@ -1340,7 +1341,7 @@ class DialogResponse(Rpc):
         bs.write_u16(self.dialog_id)
         bs.write_u8(self.button)
         bs.write_i16(-1 if self.list_index is None else self.list_index)
-        bs.write_dynamic_buf8(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.text)
 
     @staticmethod
     def decode_rpc_payload(bs):
@@ -1349,7 +1350,7 @@ class DialogResponse(Rpc):
         list_index = bs.read_i16()
         if list_index == -1:
             list_index = None
-        text = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        text = bs.read_dynamic_str8()
         return DialogResponse(dialog_id, button, list_index, text)
 
 ''' S2C
@@ -1522,7 +1523,7 @@ class SetPlayerColor(Rpc):
     def __init__(self, player_id, color):
         super().__init__(RPC.SET_PLAYER_COLOR)
         self.player_id = player_id
-        self.color = color
+        self.color = Color(color)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
@@ -1551,13 +1552,13 @@ class ShowGameText(Rpc):
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.style)
         bs.write_u32(self.duration)
-        bs.write_dynamic_buf32(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_str32(self.text)
 
     @staticmethod
     def decode_rpc_payload(bs):
         style = bs.read_u32()
         duration = bs.read_u32()
-        text = bs.read_dynamic_buf32().decode(SAMP_ENCODING)
+        text = bs.read_dynamic_str32()
         return ShowGameText(style, duration, text)
 
 class ForceClassSelection(Rpc):
@@ -1740,7 +1741,7 @@ class ToggleTextdrawsClickable(Rpc):
     def __init__(self, clickable, color):
         super().__init__(RPC.TOGGLE_TEXTDRAWS_CLICKABLE)
         self.clickable = bool(clickable)
-        self.color = color
+        self.color = Color(color)
 
     def encode_rpc_payload(self, bs):
         bs.write_bit(self.clickable)
@@ -1789,8 +1790,8 @@ class ApplyPlayerAnimation(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_dynamic_buf8(self.anim_lib.encode(SAMP_ENCODING))
-        bs.write_dynamic_buf8(self.anim_name.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.anim_lib)
+        bs.write_dynamic_str8(self.anim_name)
         bs.write_float(self.delta)
         bs.write_bit(self.loop)
         bs.write_bit(self.lockx)
@@ -1801,8 +1802,8 @@ class ApplyPlayerAnimation(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        anim_lib = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
-        anim_name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        anim_lib = bs.read_dynamic_str8()
+        anim_name = bs.read_dynamic_str8()
         delta = bs.read_float()
         loop = bs.read_bit()
         lockx = bs.read_bit()
@@ -1917,16 +1918,16 @@ class ChatMessage(Rpc):
     def __init__(self, message, color=0xffffffff):
         super().__init__(RPC.CHAT_MESSAGE)
         self.message = message
-        self.color = color
+        self.color = Color(color)
 
     def encode_rpc_payload(self, bs):
         bs.write_u32(self.color)
-        bs.write_dynamic_buf32(self.message.encode(SAMP_ENCODING))
+        bs.write_dynamic_str32(self.message)
 
     @staticmethod
     def decode_rpc_payload(bs):
         color = bs.read_u32()
-        message = bs.read_dynamic_buf32().decode(SAMP_ENCODING)
+        message = bs.read_dynamic_str32()
         return ChatMessage(message, color)
 
 class SetWorldTime(Rpc):
@@ -2044,11 +2045,11 @@ class RequestChatMessage(Rpc):
         self.message = message
 
     def encode_rpc_payload(self, bs):
-        bs.write_dynamic_buf8(self.message.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.message)
 
     @staticmethod
     def decode_rpc_payload(bs):
-        message = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        message = bs.read_dynamic_str8()
         return RequestChatMessage(message)
 RPC.REQUEST_CHAT_MESSAGE.decode_client_rpc_payload = RequestChatMessage.decode_rpc_payload
 
@@ -2065,12 +2066,12 @@ class PlayerChatMessage(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.player_id)
-        bs.write_dynamic_buf8(self.message.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.message)
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        message = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        message = bs.read_dynamic_str8()
         return PlayerChatMessage(player_id, message)
 RPC.PLAYER_CHAT_MESSAGE.decode_server_rpc_payload = PlayerChatMessage.decode_rpc_payload
 
@@ -2137,7 +2138,7 @@ class ClientCheck(Rpc):
         offset = bs.read_u16()
         size = bs.read_u16()
         return ClientCheck(type, arg, offset, size)
-CLIENT_CHECK.decode_client_rpc_payload = ClientCheck.decode_rpc_payload
+CLIENT_CHECK.decode_server_rpc_payload = ClientCheck.decode_rpc_payload
 
 ''' C2S
 Responds to a server ClientCheck
@@ -2163,7 +2164,7 @@ class ClientCheckResponse(Rpc):
         arg = bs.read_u32()
         checksum = bs.read_u8()
         return ClientCheckResponse(type, arg, checksum)
-RPC.CLIENT_CHECK_RESPONSE.decode_server_rpc_payload = ClientCheckResponse.decode_rpc_payload
+RPC.CLIENT_CHECK_RESPONSE.decode_client_rpc_payload = ClientCheckResponse.decode_rpc_payload
 
 ''' S2C
 Enables or disables stunt bonuses.
@@ -2190,12 +2191,12 @@ class SetTextdrawText(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
-        bs.write_dynamic_buf16(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_str16(self.text)
 
     @staticmethod
     def decode_rpc_payload(bs):
         textdraw_id = bs.read_u16()
-        text = bs.read_dynamic_buf16().decode(SAMP_ENCODING)
+        text = bs.read_dynamic_str16()
         return SetTextdrawText(textdraw_id, text)
 
 class DamageVehicle(Rpc):
@@ -2405,12 +2406,12 @@ class SetVehicleNumberPlate(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
-        bs.write_dynamic_buf8(self.text.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.text)
 
     @staticmethod
     def decode_rpc_payload(bs):
         vehicle_id = bs.read_u16()
-        text = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        text = bs.read_dynamic_str8()
         return SetVehicleNumberPlate(vehicle_id, text)
 
 ''' S2C
@@ -2647,25 +2648,34 @@ class TEXTDRAW_FLAG(enum.IntEnum):
     CENTER = (1 << 4),
     PROPORTIONAL = (1 << 3),
 
+# https://www.mixmods.com.br/2013/07/fontes-das-letras-do-gta-sa/
+class TEXTDRAW_STYLE(enum.IntEnum):
+	BECKETT_REGULAR = 0 # Font
+	AHARONI_BOLD    = 1 # Font
+	BANK_GOTHIC     = 2 # Font
+	PRICEDOWN       = 3 # Font
+	SPRITE          = 4 # TXD sprite
+	MODEL           = 5 # Model
+
 ''' S2C
 Shows a textdraw.
 The x,y coordinate is the top left coordinate for the text draw area based on a 640x480 "canvas" (irrespective of screen resolution).
 flags: see TEXTDRAW_FLAG
 '''
 class ShowTextdraw(Rpc):
-    def __init__(self, textdraw_id, text, pos, flags=0, letter_size=Vec2(1,1), letter_color=0xffffffff, line_size=Vec2(0,0), box_color=0, shadow=0, outline=0, background_color=0x00000000, style=0, clickable=False, model_id=0, rot=Vec3(0.0, 0.0, 0.0), zoom=1.0, color1=0xffff, color2=0xffff):
+    def __init__(self, textdraw_id, text, pos, flags=0, letter_size=Vec2(1,1), letter_color=0xffffffff, line_size=Vec2(0,0), box_color=0, shadow=0, outline=0, background_color=0x00000000, style=TEXTDRAW_STYLE.BECKETT_REGULAR, clickable=False, model_id=None, rot=Vec3(0.0, 0.0, 0.0), zoom=1.0, color1=0xffff, color2=0xffff):
         super().__init__(RPC.SHOW_TEXTDRAW)
         self.textdraw_id = textdraw_id
         self.text = text
         self.pos = pos
         self.flags = flags
         self.letter_size = letter_size
-        self.letter_color = letter_color
+        self.letter_color = Color(letter_color)
         self.line_size = line_size
-        self.box_color = box_color
+        self.box_color = Color(box_color)
         self.shadow = shadow
         self.outline = outline
-        self.background_color = background_color
+        self.background_color = Color(background_color)
         self.style = style
         self.clickable = clickable
         self.model_id = model_id
@@ -2687,16 +2697,12 @@ class ShowTextdraw(Rpc):
         bs.write_u8(self.style)
         bs.write_u8(self.clickable)
         bs.write_vec2(self.pos)
-        bs.write_u16(self.model_id)
+        bs.write_u16(0 if self.model_id is None else self.model_id)
         bs.write_vec3(self.rot)
         bs.write_float(self.zoom)
         bs.write_u16(self.color1)
         bs.write_u16(self.color2)
-        try:
-            bs.write_dynamic_buf16(encode_gxt(self.text))
-        except:
-            log(f'ShowTextdraw.encode: failed to encode "{self.text}"')
-            bs.write_dynamic_buf16('')
+        bs.write_dynamic_str16(self.text)
 
     @staticmethod
     def decode_rpc_payload(bs):
@@ -2713,15 +2719,13 @@ class ShowTextdraw(Rpc):
         clickable = bs.read_u8()
         pos = bs.read_vec2()
         model_id = bs.read_u16()
+        if model_id == 0:
+            model_id = None
         rot = bs.read_vec3()
         zoom = bs.read_float()
         color1 = bs.read_u16()
         color2 = bs.read_u16()
-        try:
-            text = decode_gxt(bs.read_dynamic_buf16())
-        except Exception as e:
-            log('ShowTextdraw.decode; failed to decode; bs={bs.data.hex(" ")}')
-            text = ''
+        text = bs.read_dynamic_str16()
         return ShowTextdraw(textdraw_id, text, pos, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, model_id, rot, zoom, color1, color2)
 
 class HideTextdraw(Rpc):
@@ -2759,7 +2763,7 @@ class ServerJoin(Rpc):
     def __init__(self, player_id, player_name, color=0xffffffff, is_npc=False):
         super().__init__(RPC.SERVER_JOIN)
         self.player_id = player_id
-        self.color = color
+        self.color = Color(color)
         self.is_npc = bool(is_npc)
         self.player_name = player_name
 
@@ -2767,14 +2771,14 @@ class ServerJoin(Rpc):
         bs.write_u16(self.player_id)
         bs.write_u32(self.color)
         bs.write_u8(self.is_npc)
-        bs.write_dynamic_buf8(self.player_name.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.player_name)
 
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
         color = bs.read_u32()
         is_npc = bs.read_u8()
-        player_name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        player_name = bs.read_dynamic_str8()
         return ServerJoin(player_id, player_name, color, is_npc)
 
 class QUIT_REASON(enum.IntEnum):
@@ -2863,7 +2867,7 @@ class InitGame(Rpc):
         bs.write_u32(self.weapon_rate)
         bs.write_u32(self.multiplier)
         bs.write_u32(self.lag_comp)
-        bs.write_dynamic_buf8(self.hostname.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.hostname)
         bs.write_bits(bytearray(self.vehicle_models), TO_BITS(212))
         bs.write_u32(self.vehicle_friendly_fire)
 
@@ -2976,11 +2980,12 @@ class SetGravity(Rpc):
         return SetGravity(gravity)
 
 ''' S2C
-Sets the health of a vehicle.
+Sets the health of the specified vehicle.
 vehicle_id: id of the vehicle to set the health
 health: new health value
 Note: A value less than 250.0(represents 25% in a 1000 hp vehicle) makes the vehicle catch on fire and after a few seconds explode.
 Note: If the vehicle is on fire(i.e. hp < 250) and the health is set to a value greater or equal to 250 the fire will disappear and the vehicle won't explode.
+e.g. SetVehicleHealth(53, 2500) # sets the hp of the vehicle with id 53 to 2500
 '''
 class SetVehicleHealth(Rpc):
     def __init__(self, vehicle_id, health):
@@ -3318,8 +3323,8 @@ class AddVehicle(Rpc):
         self.add_siren = add_siren
         self.mods = mods
         self.paint_job = paint_job
-        self.body_color1 = body_color1
-        self.body_color2 = body_color2
+        self.body_color1 = Color(body_color1)
+        self.body_color2 = Color(body_color2)
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.vehicle_id)
@@ -3510,8 +3515,8 @@ class ApplyActorAnimation(Rpc):
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.actor_id)
-        bs.write_dynamic_buf8(self.anim_lib.encode(SAMP_ENCODING))
-        bs.write_dynamic_buf8(self.anim_name.encode(SAMP_ENCODING))
+        bs.write_dynamic_str8(self.anim_lib)
+        bs.write_dynamic_str8(self.anim_name)
         bs.write_float(self.delta)
         bs.write_bit(self.loop)
         bs.write_bit(self.lock_x)
@@ -3522,8 +3527,8 @@ class ApplyActorAnimation(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         actor_id = bs.read_u16()
-        anim_lib = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
-        anim_name = bs.read_dynamic_buf8().decode(SAMP_ENCODING)
+        anim_lib = bs.read_dynamic_str8()
+        anim_name = bs.read_dynamic_str8()
         delta = bs.read_float()
         loop = bs.read_bit()
         lock_x = bs.read_bit()

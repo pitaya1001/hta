@@ -59,8 +59,8 @@ class UD_KEY(enum.IntEnum):
 # lr_keys and ud_keys are just for animation, they do not actually make the player move, 'vel' does
 class KeyData:
     def __init__(self, lr_keys, ud_keys, keys):
-        self.lr_keys = LR_KEY(lr_keys) # i16; LR_KEY.LEFT, LR_KEY.RIGHT or 0(neither)
-        self.ud_keys = UD_KEY(ud_keys) # i16; UD_KEY.UP, UD_KEY.DOWN or 0(neither)
+        self.lr_keys = lr_keys #LR_KEY(lr_keys) # i16; LR_KEY.LEFT, LR_KEY.RIGHT or 0(neither)
+        self.ud_keys = ud_keys #UD_KEY(ud_keys) # i16; UD_KEY.UP, UD_KEY.DOWN or 0(neither)
         self.keys = keys # u32; bitmask of constants in PLAYER_KEY(if on foot) or VEHICLE_KEY(if in vehicle)
 
     def __str__(self):
@@ -77,7 +77,8 @@ class KeyData:
                 bitmask += 'NONE) '
             else:
                 bitmask = bitmask[:-1] + ') '
-        return f'<KeyData lr_keys={self.lr_keys.name} ud_keys={self.ud_keys.name} keys={bitmask[:-1]}>'
+        #return f'<KeyData lr_keys={self.lr_keys.name} ud_keys={self.ud_keys.name} keys={bitmask[:-1]}>'
+        return f'<KeyData lr_keys={self.lr_keys} ud_keys={self.ud_keys} keys={bitmask[:-1]}>'
 
 def read_key_data(self):
     lr_keys = self.read_i16()

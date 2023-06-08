@@ -243,11 +243,11 @@ VehicleModel(611 , 'Utility Trailer'   , 'utiltr1'  , 0 , 'Trailers'        , 'N
 VEHICLE = enum.IntEnum('VEHICLE', {m.model.upper():m.model_id for m in vehicle_models if m != None})
 
 class Vehicle(VehicleModel):
-    def __init__(self, model_id, id):
+    def __init__(self, id, model_id):
         m = vehicle_models[model_id]
         super().__init__(model_id, m.name, m.model, m.seat_count, m.category, m.mod_shop)
         self.id = id
         self.pos = None # vehicle position as Vec3
         self.dir = None # vehicle direction as Quat
         self.health = None
-        self.seats = [None] * self.seat_count
+        self.seats = [None] * self.seat_count # references to players

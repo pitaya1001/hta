@@ -24,6 +24,7 @@ class Module:
         #    server.push_message_to_all(Hide3DTextLabel(i))
         #
         #    #self.server.push_message_to_all(PlayerSync(id, pos=Vec3(2*i,0,3),ud_keys=2**i))
+        #server.push_message_to_all(ShowTextdraw(textdraw_id=2095, text='hello', pos=Vec2(220.02, 355.63), flags=24, letter_size=Vec2(0.25, 1.18), letter_color=4294967295, line_size=Vec2(1280.00, 1280.00), box_color=2155905152, shadow=1, outline=1, background_color=268435456, style=2 ,clickable=0, model_id=0, rot=Vec3(0.00, 0.00, 0.00), zoom=1.00, color1=65535 ,color2=65535))
 
 #0 stop
 # 1-60 forward (same pace)

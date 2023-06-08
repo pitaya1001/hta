@@ -40,7 +40,7 @@ class DriverSync(Message):
         self.landing_gear = landing_gear # landing_gear: 1 if retracted, 0 if in normal state
         self.trailer_id = trailer_id # None if invalid
         self.extra = extra # extra(4 bytes): vehicle specific; may be train_speed(float), bike_inclination(float) or hydra_thrust_angle(uint32)
-        if self.extra is None:
+        if self.extra is not None:
             self.train_speed = self.bike_inclination = struct.unpack('f', extra)[0]
             self.hydra_thrust_angle = struct.unpack('I', extra)[0]
         else:
@@ -331,9 +331,12 @@ class BulletSync(Message):
         hit_pos = bs.read_vec3()
         offset = bs.read_vec3()
         weapon_id = bs.read_u8()
-        return BulletSync(None, player_id, hit_type, hit_id, origin, hit_pos, offset, weapon_id)
+        return BulletSync(None, hit_type, hit_id, origin, hit_pos, offset, weapon_id)
 
 ''' S2C and S2C
+The server must only send PlayerSync after ServerJoin and AddPlayer RPCs have been sent, otherwise the client ignores the sync
+
+The client sends PlayerSync periodically to update the server about position, health, ...
 '''
 class PlayerSync(Message):
     def __init__(self, player_id, key_data=KeyData(0, 0, 0), pos=Vec3(0.0, 0.0, 3.0), dir=Quat(0.0, 0.0, 0.0, 0.0), health=100, armor=0, weapon_id=0, special_action=0, vel=Vec3(0.0, 0.0, 0.0), surf_data=None, anim_data=None):
@@ -438,12 +441,15 @@ class MarkersSync(Message):
     @staticmethod
     def decode_server_payload(data):
         bs = Bitstream(data)
-        player_count = bs.read_u16()
+        player_count = bs.read_u32()
         markers = [None] * player_count
         for i in range(player_count):
             player_id = bs.read_u16()
             if has_marker := bs.read_bit():
-                pos = Vec3(bs.read_i16(), bs.read_i16(), bs.read_i16())
+                x = bs.read_i16()
+                y = bs.read_i16()
+                z = bs.read_i16()
+                pos = Vec3(x, y, z)
             else:
                 pos = None
             markers[i] = (player_id, pos)
@@ -619,10 +625,11 @@ class PassengerSync(Message):
         seat_id = bs.read_bits_num(2)
         drive_by = bs.read_bits_num(6)
         passenger_weapon_id = bs.read_bits_num(6)
-        key_data.keys |= (bs.read_bits_num(2) << 16)
+        additional_key = bs.read_bits_num(2)
         passenger_health = bs.read_u8()
         passenger_armor = bs.read_u8()
         key_data = bs.read_key_data()
+        key_data.keys |= (additional_key << 16)
         pos = bs.read_vec3()
         return PassengerSync(passenger_id, vehicle_id, seat_id, drive_by, passenger_weapon_id, passenger_health, passenger_armor, key_data, pos)
 

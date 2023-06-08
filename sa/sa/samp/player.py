@@ -3,6 +3,8 @@ from .keys import KeyData
 from .anim import AnimData
 from .surf import SurfData
 
+from .common import pretty_format
+
 class Player(SaPlayer):
     def __init__(self, id, name='', color=0xffffffff):
         super().__init__()
@@ -21,3 +23,6 @@ class Player(SaPlayer):
         self.player_pool = None # reference to player pool; it is probably a shared pool
         self.vehicle_pool = None # reference to vehicle pool; it is probably a shared pool
         self.logged_in_rcon = False
+    
+    def __str__(self):
+        return pretty_format(self, 0)

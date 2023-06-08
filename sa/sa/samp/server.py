@@ -398,6 +398,8 @@ class Server:
 
         id = self.get_unused_id(self)
         player = Player(id)
+        player.player_pool = self.player_pool
+        player.vehicle_pool = self.vehicle_pool
         player.peer = peer
         self.player_pool[id] = player
         peer.player = player
@@ -483,36 +485,55 @@ class Server:
                 return
 
         if message.id == MSG.PLAYER_SYNC:
-            ps = message
             player = peer.player
-            player.pos = ps.pos
-            player.dir = ps.dir
-            player.health = ps.health
-            player.armor = ps.armor
-            player.weapon_id = ps.weapon_id
-            player.key_data = ps.key_data
-            player.anim_data = ps.anim_data
+            player.pos = message.pos
+            player.dir = message.dir
+            player.health = message.health
+            player.armor = message.armor
+            player.weapon_id = message.weapon_id
+            player.key_data = message.key_data
+            player.anim_data = message.anim_data
         elif message.id == MSG.DRIVER_SYNC:
-            ds = message
             player = peer.player
-            if vehicle := player.vehicle_pool[ds.vehicle_id] is not None:
-                vehicle.pos = player.pos = ds.pos
-                vehicle.dir = ds.dir
-                vehicle.health = ds.vehicle_health
-                player.health = ds.driver_health
-                player.armor = ds.driver_armor
-                player.weapon_id = ds.driver_weapon_id
-                player.key_data = ds.key_data
+            vehicle_id = message.vehicle_id
+            
+            if vehicle_id > MAX_VEHICLE_ID:
+                return
+            
+            vehicle = player.vehicle_pool[vehicle_id]
+            
+            if not vehicle:
+                return
+            
+            vehicle.pos = message.pos
+            vehicle.dir = message.dir
+            vehicle.health = message.vehicle_health
+            
+            player.pos = message.pos
+            player.health = message.driver_health
+            player.armor = message.driver_armor
+            player.weapon_id = message.driver_weapon_id
+            player.key_data = message.key_data
         elif message.id == MSG.PASSENGER_SYNC:
-            ps = message
             player = peer.player
-            if vehicle := player.vehicle_pool[ps.vehicle_id] is not None:
-                vehicle.pos = player.pos = ps.pos
-                vehicle.health = ps.vehicle_health
-                player.health = ps.passenger_health
-                player.armor = ps.passenger_armor
-                player.weapon_id = ps.passenger_weapon_id
-                player.key_data = ps.key_data
+            vehicle_id = message.vehicle_id
+            
+            if vehicle_id > MAX_VEHICLE_ID:
+                return
+            
+            vehicle = player.vehicle_pool[vehicle_id]
+            
+            if not vehicle:
+                return
+            
+            vehicle.pos = message.pos
+            vehicle.health = message.vehicle_health
+            
+            player.pos = message.pos
+            player.health = message.passenger_health
+            player.armor = message.passenger_armor
+            player.weapon_id = message.passenger_weapon_id
+            player.key_data = message.key_data
         elif message.id == MSG.SPECTATOR_SYNC:
             ss = message
             player = peer.player
@@ -572,7 +593,7 @@ class Server:
                 arg = message.command[len(cmd):].strip()
                 if cmd.lower() == 'login':
                     if arg != self.rcon_password:
-                        peer.push_message(ChatMessage('SERVER: Bad admin password. Repeated attempts will get you banned.' color=0xffffffff))
+                        peer.push_message(ChatMessage('SERVER: Bad admin password. Repeated attempts will get you banned.', color=0xffffffff))
                     else:
                         peer.player.logged_in_rcon = True
                         peer.push_message(ChatMessage('SERVER: You are logged in as admin.', color=0xffffffff))
