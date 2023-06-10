@@ -8,11 +8,17 @@ from sa.samp import *
 class Module:
     def on_load(self, server):
         self.server = server
-
         self.timer_task = asyncio.get_event_loop().create_task(self.timer())
 
         #server.push_message_to_all(ChatMessage('on_load(): hello from module.py'))
 
+        #server.push_message_to_all(ServerJoin(10,'bob'))
+        #server.push_message_to_all(StartPlayerStream(10))
+        v=Vehicle(101,VEHICLE.HYDRA)
+        server.vehicle_pool[101]=v
+        server.push_message_to_all(AddVehicle(101, VEHICLE.HYDRA, SPOT.GROVE))
+        #server.push_message_to_all(DriverSync
+        
         #for i in range(61,128):
         #    id = 10+i
         #    server.push_message_to_all(ServerQuit(id))
@@ -54,7 +60,13 @@ class Module:
 
     def on_message(self, message, internal_packet, peer, server):
         #print('hello from module', message)
-        if message.id in [MSG.PLAYER_SYNC, MSG.DRIVER_SYNC]:
-            ps = message
-            print(f'{ps.key_data}')
+        #if message.id in [MSG.PLAYER_SYNC, MSG.DRIVER_SYNC]:
+        #    ps = message
+        #    print(f'{ps.key_data}')
+        
+       #if message.id == MSG.PLAYER_SYNC:
+       #   print(peer.player.health)
+       #   #print(message.health,
+       #   #message.armor)
+        
         pass

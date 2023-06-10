@@ -20,11 +20,13 @@ module_instance = None
 
 def on_message(message, internal_packet, peer, server):
     try:
-        if module_instance is None:
-            if module_instance.on_message(message, internal_packet, peer, server) is True:
-                return
-    except:
+        callback = module_instance.on_message
+    except AttributeError:
+        callback = None
         traceback.print_exc()
+    if callback:
+        if callback(message, internal_packet, peer, server) is True:
+            return
     if message.id == MSG.RPC:
         rpc = message
         if rpc.rpc_id == RPC.REQUEST_CHAT_COMMAND:

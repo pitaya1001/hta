@@ -1,3 +1,8 @@
+'''
+There is one player pool, one vehicle pool.
+Stream distance is the same for everyone
+'''
+
 import socket
 import asyncio
 import os # urandom
@@ -13,6 +18,8 @@ from .gpci import validate_gpci
 from .auth_keys import auth_keys
 from .encryption import decrypt_buffer
 from .query import *
+
+from .spots import *
 
 class Server:
     def __init__(self, addr=None):
@@ -74,6 +81,7 @@ class Server:
         self.fake_detailed_player_list = None
 
         self.message_callbacks = [] # callback(message, internal_packet, peer, server)
+        self.post_message_callbacks = [] # callback(message, internal_packet, peer, server)
 
         self.cached_info_query_payload = None
         self.cached_rules_query_payload = None
@@ -83,8 +91,7 @@ class Server:
         self.query_cache_ttl = 15 # in seconds
         self.cache_query_payloads()
 
-        self.send_rate = 40
-        #self.logic_callbacks = []
+        self.player_stream_distance = 200.0
 
         self.loop = asyncio.get_running_loop()
 
@@ -109,7 +116,6 @@ class Server:
         self.running = False
 
         self.last_logic_t = time.time()
-        threading.Thread(target=self.logic_thread, daemon=True).start()
 
         self.cached_scores_and_pings = None
         self.cached_scores_and_pings_ttl = 5 # in seconds
@@ -134,7 +140,7 @@ class Server:
                 self.handle_packet(data, addr)
         except asyncio.exceptions.CancelledError: pass
         except: log(traceback.format_exc())
-
+        
     def cache_scores_and_pings(self):
         players = []
         for peer in self.peers.values():
@@ -172,23 +178,67 @@ class Server:
         except asyncio.exceptions.CancelledError: pass
         except: log(traceback.format_exc())
 
-    def logic_thread(self):
-        while True:
-            time.sleep(40/1000)
+    def update_player_streams_naive(self):
+        '''
+        naive implementation
+        iterate all players and calculate the distance to all other players.
+        '''
+        for peer in self.peers.values():
+            player = peer.player
+            updated_players_in_fov = [other_peer.player for other_peer in self.peers.values() if other_peer != peer and player.pos.distance2d(other_peer.player.pos) <= self.player_stream_distance]
+            for new_player in [p for p in updated_players_in_fov if p not in player.players_in_fov]:
+                peer.push_message(StartPlayerStream(new_player.id, team=new_player.team, pos=new_player.pos, color=new_player.color))
+            for old_player in [p for p in player.players_in_fov if p not in updated_players_in_fov]:
+                peer.push_message(StopPlayerStream(old_player.id))
+            player.players_in_fov = updated_players_in_fov
+    
+    #def update_player_streams_grid(self):
+    #    '''
+    #    grid implementation
+    #    cell size is at least the stream distance
+    #    First, iterate all players putting them into cells on the grid
+    #    Then, iterate again, and calculate the distance to players only in
+    #    the current and adjacent cells.
+    #    '''
+    #    for peer in self.peers.values():
+    #        player = peer.player
 
-    #def update_logic(self):
-    #    now = time.time()
-    #    dt = now - self.last_logic_t
-    #    self.last_logic_t = now
-    #
-    #    #for callback in self.logic_callbacks:
-    #    #    callback(dt)
-    #    #
-    #    #for peer in self.peers:
-    #    #    player = peer.player
-    #    #    if player.in_world:
-    #    #        for player_in_fov in player.players_in_fov:
-    #    #            #peer.push_message(OnFootSync(player_in_fov...))
+    def stream_thread(self):
+        '''
+        determine if a player should start/stop being streamed to other players
+        i.e. this functions sends the StartPlayerStream and StopPlayerStream rpcs
+        A good analogy is the following: imagine a 2D plane full of moving circles,
+        whenever two circles overlap, both receive a StartPlayerStream RPC saying that
+        a new circle is overlapping them. When the opposite occurs(i.e. they are
+        no longer overlapping), both receive a StopPlayerStream RPC.
+        '''
+        try:
+            while True:
+                time.sleep(1)
+                self.update_player_streams_naive()
+        except:
+            log(traceback.format_exc())
+
+    def logic_thread(self):
+        try:
+            while True:
+                time.sleep(0.1)
+                for peer in self.peers.values():
+                    player = peer.player
+                    #if player.pos is not None:
+                    #    player.pos.x+=0.1
+                    #    print(player.pos)
+                    for near_player in player.players_in_fov:
+                        vehicle = near_player.vehicle
+                        if vehicle: # in vehicle
+                            if near_player.seat_id == 0: # driver
+                                peer.push_message(DriverSync(vehicle.id, near_player.id, pos=vehicle.pos, dir=vehicle.dir, vehicle_health=vehicle.health, driver_health=near_player.health, driver_armor=near_player.armor))
+                            else: # passenger
+                                peer.push_message(PassengerSync(vehicle.id, near_player.id, pos=near_player.pos, health=near_player.health, armor=near_player.armor, seat_id=near_player.seat_id))
+                        else: # on foot
+                            peer.push_message(PlayerSync(near_player.id, pos=near_player.pos, dir=near_player.dir, health=near_player.health, armor=near_player.armor))
+        except:
+            log(traceback.format_exc())
 
     def get_lowest_unused_id(self):
         return next(id for id, player in enumerate(self.player_pool) if player is None)
@@ -222,6 +272,9 @@ class Server:
         self.ping_task = self.loop.create_task(self.ping_loop())
 
         self.cache_scores_and_pings_task = self.loop.create_task(self.cache_scores_and_pings_loop())
+
+        threading.Thread(target=self.logic_thread, daemon=True).start()
+        threading.Thread(target=self.stream_thread, daemon=True).start()
 
         self.running = True
 
@@ -359,6 +412,7 @@ class Server:
                     f'  password\t= "{self.password}"  (string)',
                     f'  port\t\t= {self.addr[1]}  (int) (read-only)',
                     f'  rcon_password\t= "{self.rcon_password}"  (string)',
+                    '',
                 ]
 
     def handle_query(self, data, addr):
@@ -396,12 +450,12 @@ class Server:
         peer.expected_client_key = None
         peer.connected_message_callbacks.append(self.on_connected_message)
 
-        id = self.get_unused_id(self)
-        player = Player(id)
+        player = Player()
+        player.id = self.get_unused_id(self)
         player.player_pool = self.player_pool
         player.vehicle_pool = self.vehicle_pool
         player.peer = peer
-        self.player_pool[id] = player
+        self.player_pool[player.id] = player
         peer.player = player
 
         self.peers[addr] = peer
@@ -450,32 +504,32 @@ class Server:
         rpc = InitGame(
             zone_names = 1,
             use_cj_walk = 0,
-            allow_weapons = 1,
-            limit_global_chat_radius = 0,
-            global_chat_radius = 1000.0,
-            stunt_bonus = 1,
+            allow_weapons = True,
+            limit_global_chat_radius = False,
+            global_chat_radius = 0,
+            stunt_bonus = True,
             name_tag_draw_distance = 200.0,
-            disable_enter_exits = 0,
-            name_tag_los = 1,
+            disable_enter_exits = True,
+            name_tag_los = True,
             manual_vehicle_engine_and_light = 0,
             spawns_available = 0,
             player_id = peer.player.id,
-            show_player_tags = 1,
-            show_player_markers = 1,
+            show_player_tags = True,
+            show_player_markers = True,
             world_time = 12,
             weather = 0,
             gravity = DEFAULT_GRAVITY,
-            lan_mode = 0,
-            death_drop_money = 0,
-            instagib = 0,
+            lan_mode = False,
+            death_drop_money = False,
+            instagib = False,
             onfoot_rate = 40,
             incar_rate = 40,
             weapon_rate = 40,
             multiplier = 10,
-            lag_comp = 1,
+            lag_comp = True,
             hostname = self.hostname,
             vehicle_models = [0] * 212,
-            vehicle_friendly_fire = 1
+            vehicle_friendly_fire = True
         )
         peer.push_message(rpc)
 
@@ -486,6 +540,8 @@ class Server:
 
         if message.id == MSG.PLAYER_SYNC:
             player = peer.player
+            player.vehicle = None
+            player.seat_id = None
             player.pos = message.pos
             player.dir = message.dir
             player.health = message.health
@@ -509,7 +565,10 @@ class Server:
             vehicle.dir = message.dir
             vehicle.health = message.vehicle_health
             
+            player.vehicle = vehicle
+            player.seat_id = 0
             player.pos = message.pos
+            player.dir = message.dir
             player.health = message.driver_health
             player.armor = message.driver_armor
             player.weapon_id = message.driver_weapon_id
@@ -527,8 +586,9 @@ class Server:
                 return
             
             vehicle.pos = message.pos
-            vehicle.health = message.vehicle_health
             
+            player.vehicle = vehicle
+            player.seat_id = message.seat_id
             player.pos = message.pos
             player.health = message.passenger_health
             player.armor = message.passenger_armor
@@ -544,24 +604,34 @@ class Server:
             id = rpc.rpc_id
             if id == RPC.PLAYER_CHAT_MESSAGE:
                 self.push_message_to_all(PlayerChatMessage(peer.player.id, rpc.message))
+            elif id == RPC.REQUEST_SPAWN:
+                peer.player.waiting_request_spawn_response = True
+                peer.push_message(RequestSpawnResponse(REQUEST_SPAWN.ACCEPT))
+                peer.player.waiting_request_spawn_response = False
             elif id == RPC.CLIENT_JOIN:
                 if validate_gpci(rpc.gpci):
-                    peer.player.name = rpc.name
+                    player = peer.player
+                    player.name = rpc.name
 
                     self.init_game_for_player(peer)
-                    peer.push_message(SetSpawnInfo(pos=Vec3(0, 0, 2)))
+                    peer.push_message(SetSpawnInfo(pos=SPOT.GROVE))
                     peer.push_message(RequestSpawnResponse(REQUEST_SPAWN.FORCE))
+                    player.pos = SPOT.GROVE
 
-                    # tell this peer which players are connected
-                    for _, p in self.peers.items():
-                        if p != peer:
-                            peer.push_message(ServerJoin(p.player.id, p.player.name, p.player.color))
+                    # tell this peer about connected players
+                    for other_peer in self.peers.values():
+                        if other_peer == peer:
+                            continue
+                        peer.push_message(ServerJoin(other_peer.player.id, other_peer.player.name, other_peer.player.color))
 
-                    # tell all peers a new player connected
-                    self.push_message_to_others(peer, ServerJoin(peer.player.id, peer.player.name, peer.player.color))
+                    # tell other peers this peer connected
+                    self.push_message_to_others(peer, ServerJoin(player.id, peer.player.name, peer.player.color))
+                    #self.push_message_to_others(peer, StartPlayerStream(player.id,pos=player.pos))
                 else:
                     # todo: kick player?
                     pass
+                    del self.peers[peer.addr]
+                    return
             elif id == RPC.REQUEST_SCORES_AND_PINGS:
                 peer.push_encoded_message(self.cached_scores_and_pings)
         elif message.id == MSG.CONNECTION_REQUEST:
@@ -585,15 +655,26 @@ class Server:
                 peer.player.ping = ping
         elif message.id == MSG.RCON_COMMAND:
             if peer.player.logged_in_rcon:
-                if (lines := self.handle_rcon_command(message.command)) is not None:
-                    for line in lines: # rcon response
-                        peer.push_message(ChatMessage(line, color=0xffffffff))
+                lines = self.handle_rcon_command(message.command)
+                
+                if not lines:
+                    return
+                
+                for line in lines: # rcon response
+                    peer.push_message(ChatMessage(line, color=0xffffffff))
             else:
                 cmd = message.command.split()[0]
                 arg = message.command[len(cmd):].strip()
-                if cmd.lower() == 'login':
-                    if arg != self.rcon_password:
-                        peer.push_message(ChatMessage('SERVER: Bad admin password. Repeated attempts will get you banned.', color=0xffffffff))
-                    else:
-                        peer.player.logged_in_rcon = True
-                        peer.push_message(ChatMessage('SERVER: You are logged in as admin.', color=0xffffffff))
+                
+                if cmd.lower() != 'login':
+                    return
+                
+                if arg != self.rcon_password:
+                    peer.push_message(ChatMessage('SERVER: Bad admin password. Repeated attempts will get you banned.', color=0xffffffff))
+                else:
+                    peer.player.logged_in_rcon = True
+                    peer.push_message(ChatMessage('SERVER: You are logged in as admin.', color=0xffffffff))
+        
+        for callback in self.post_message_callbacks:
+            if callback(message, internal_packet, peer, self) is True:
+                return

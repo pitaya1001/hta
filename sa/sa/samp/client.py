@@ -22,7 +22,7 @@ class CLIENT_STATE(enum.IntEnum):
 
 class Client(Player):
     def __init__(self, server_addr=None, name=''.join(random.choices(string.ascii_uppercase, k=MAX_PLAYER_NAME_LENGTH)), gpci=generate_random_gpci(), version='0.3.7-R5', server_password=''):
-        super().__init__(id=None, name=name)
+        super().__init__()
         self.server_addr = server_addr
         self.gpci = gpci
         self.version = version
@@ -36,6 +36,7 @@ class Client(Player):
         self.server_peer.unconnected_message_callbacks.append(self.on_unconnected_message)
 
         self.message_callbacks = [] # callback(message, internal_packet, peer, client)
+        self.post_message_callbacks = [] # callback(message, internal_packet, peer, client)
 
         self.connected = False
         self.state = CLIENT_STATE.UNCONNECTED
@@ -48,7 +49,7 @@ class Client(Player):
         # attributes
         self.player_pool = [None] * (MAX_PLAYER_ID + 1) # useful for lookup(O(1) time) by player id
         self.players = [] # useful for quickly iterating connected players
-        self.players_in_fov = [] # useful for quickly iterating over players in our field of view
+        #self.players_in_fov = [] # useful for quickly iterating over players in our field of view
 
         self.vehicle_pool = [None] * (MAX_VEHICLE_ID + 1) # useful for lookup(O(1) time) by vehicle id
         self.vehicles_in_fov = [] # useful for quickly iterating over vehicles in our field of view
@@ -145,7 +146,7 @@ class Client(Player):
             passenger = self.player_pool[passenger_id]
             vehicle = self.vehicle_pool[vehicle_id]
             
-            if not passener or not vehicle:
+            if not passenger or not vehicle:
                 return
                 
             # update passenger attributes
@@ -189,11 +190,11 @@ class Client(Player):
                 self.players.pop(-1)
                 
                 # remove from 'players_in_fov' list in O(1) time
-                if player.players_in_fov_index: # if present in 'players_in_fov' list
+                if player.players_in_fov_index is not None: # if present in 'players_in_fov' list
                     self.players_in_fov[-1].players_in_fov_index = player.players_in_fov_index # update index
                     self.players_in_fov[player.players_in_fov_index] = self.players_in_fov[-1]
                     self.players_in_fov.pop(-1)
-            elif rpc.rpc_id == RPC.ADD_PLAYER:
+            elif rpc.rpc_id == RPC.START_PLAYER_STREAM:
                 if rpc.player_id > MAX_PLAYER_ID:
                     return
                     
@@ -212,7 +213,7 @@ class Client(Player):
                 player.skill_level = rpc.skill_level
                 player.players_in_fov_index = len(self.players_in_fov) # used for later removing from 'players_in_fov' list in O(1) time
                 self.players_in_fov.append(player)
-            elif rpc.rpc_id == RPC.REMOVE_PLAYER:
+            elif rpc.rpc_id == RPC.STOP_PLAYER_STREAM:
                 if rpc.player_id > MAX_PLAYER_ID:
                     return
                     
@@ -297,6 +298,25 @@ class Client(Player):
                 self.textdraws[-1].textdraws_index = textdraw.textdraws_index # update index
                 self.textdraws[textdraw.textdraws_index] = self.textdraws[-1]
                 self.textdraws.pop(-1)  
+            elif rpc.rpc_id == RPC.SET_SPAWN_INFO:
+                self.spawn_info = rpc
+            elif rpc.rpc_id == RPC.REQUEST_SPAWN_RESPONSE:
+                if not self.spawn_info: # server did not send SetSpawnInfo
+                    return
+                
+                if rpc.response == REQUEST_SPAWN.REJECT:
+                    self.waiting_request_spawn_response = False
+                # if we are forced to spawn or we we're waiting to spawn
+                # and the server accepted it
+                elif (
+                    rpc.response == REQUEST_SPAWN.FORCE
+                    or (self.waiting_request_spawn_response
+                    and rpc.response == REQUEST_SPAWN.ACCEPT)
+                ):
+                    # spawn
+                    self.pos = self.spawn_info.pos
+                    self.skin = self.spawn_info.skin
+                    self.team = self.spawn_info.team
         elif message.id == MSG.CONNECTION_REQUEST_ACCEPTED:
             self.id = message.player_id # save the id the server assigned to us
             peer.push_message(ClientJoin(CLIENT_VERSION_37, 1, self.name, (message.cookie ^ CLIENT_VERSION_37), self.gpci, self.version))
@@ -305,6 +325,10 @@ class Client(Player):
             server_key = bytes(message.key[:-1])
             client_key = auth_keys[server_key]
             peer.push_message(AuthKey(client_key))
+        
+        for callback in self.post_message_callbacks:
+            if callback(message, internal_packet, peer, self) is True:
+                break
 
     async def retry_connection_cookie(self, delay):
         await asyncio.sleep(delay)

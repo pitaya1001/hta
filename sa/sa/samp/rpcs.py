@@ -27,7 +27,7 @@ class RPC(enum.IntEnum):
     PLAY_SOUND                  = 16  # PlaySound
     SET_WORLD_BOUNDS            = 17  # SetWorldBounds
     GIVE_MONEY                  = 18  # GiveMoney
-    SET_DIRECTION_YAW           = 19  # SetDirectionYaw
+    SET_DIR_Z                   = 19  # SetDirZ
     RESET_MONEY                 = 20  # ResetMoney
     REMOVE_ALL_WEAPONS          = 21  # RemoveAllWeapons
     GIVE_WEAPON                 = 22  # GiveWeapon
@@ -40,7 +40,7 @@ class RPC(enum.IntEnum):
     CANCEL_EDIT_OBJECT          = 28  # CancelEditObject
     SET_TIME                    = 29  # SetTime
     TOGGLE_CLOCK                = 30  # ToggleClock
-    ADD_PLAYER                  = 32  # AddPlayer
+    START_PLAYER_STREAM         = 32  # StartPlayerStream
     SET_SHOP_NAME               = 33  # SetShopName
     SET_PLAYER_SKILL_LEVEL      = 34  # SetPlayerSkillLevel
     SET_DRUNK_LEVEL             = 35  # SetDrunkLevel
@@ -160,7 +160,7 @@ class RPC(enum.IntEnum):
     SET_VEHICLE_DIR_Z           = 160 # SetVehicleDirZ
     SET_VEHICLE_PARAMS          = 161 # SetVehicleParams
     SET_CAMERA_BEHIND_PLAYER    = 162 # SetCameraBehindPlayer
-    REMOVE_PLAYER               = 163 # RemovePlayer
+    STOP_PLAYER_STREAM          = 163 # StopPlayerStream
     ADD_VEHICLE                 = 164 # AddVehicle
     REMOVE_VEHICLE              = 165 # RemoveVehicle
     DEATH_BROADCAST             = 166 # DeathBroadcast
@@ -363,9 +363,8 @@ class GiveMoney(Rpc):
         return GiveMoney(amount)
 
 ''' S2C
-Sets the facing angle of the player this rpc is sent to.
-Note: not viewangles, but direction(orientation)
-e.g. SetDirectionYaw(0.0) # Player faces north
+Sets the Z component of the direction(orientation)
+e.g. SetDirZ(0.0) # Player faces north
 
            (North)
               0°
@@ -376,9 +375,9 @@ e.g. SetDirectionYaw(0.0) # Player faces north
            (South)
 Related: SetPlayerFacingAngle
 '''
-class SetDirectionYaw(Rpc):
+class SetDirZ(Rpc):
     def __init__(self, angle):
-        super().__init__(RPC.SET_DIRECTION_YAW)
+        super().__init__(RPC.SET_DIR_Z)
         self.angle = angle
 
     def encode_rpc_payload(self, bs):
@@ -387,7 +386,7 @@ class SetDirectionYaw(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         angle = bs.read_float()
-        return SetDirectionYaw(angle)
+        return SetDirZ(angle)
 
 ''' S2C
 Sets the money amount to zero of the player this rpc is sent to.
@@ -671,19 +670,19 @@ class ToggleClock(Rpc):
 
 ''' S2C
 Adds the specified player to the world.
-If this rpc is sent twice(without a RemovePlayer in between) it just overwrites the values.
+If this rpc is sent twice(without a StopPlayerStream in between) it just overwrites the values.
 team: valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
-Note: The server MUST send the ServerJoin RPC before AddPlayer; i.e. logically a player has to first join the server, then be added to the world.
+Note: The server MUST send the ServerJoin RPC before StartPlayerStream; i.e. logically a player has to first join the server, then be added to the world.
 Related: WorldPlayerAdd, PlayerStreamIn
 '''
-class AddPlayer(Rpc):
-    def __init__(self, player_id, team=None, skin_id=SKIN.CJ, pos=Vec3(0,0,3), facing_angle=0.0, color=0xffffffff, fighting_style=0, skill_level=0):
-        super().__init__(RPC.ADD_PLAYER)
+class StartPlayerStream(Rpc):
+    def __init__(self, player_id, team=None, skin_id=SKIN.CJ, pos=Vec3(0,0,3), dir_z=0.0, color=0xffffffff, fighting_style=0, skill_level=0):
+        super().__init__(RPC.START_PLAYER_STREAM)
         self.player_id = player_id
         self.team = team
         self.skin_id = SKIN(skin_id)
         self.pos = pos
-        self.facing_angle = facing_angle
+        self.dir_z = dir_z
         self.color = Color(color)
         self.fighting_style = fighting_style
         self.skill_level = skill_level
@@ -693,7 +692,7 @@ class AddPlayer(Rpc):
         bs.write_u8(NO_TEAM_ID if self.team is None else self.team)
         bs.write_u32(self.skin_id)
         bs.write_vec3(self.pos)
-        bs.write_float(self.facing_angle)
+        bs.write_float(self.dir_z)
         bs.write_u32(self.color)
         bs.write_u8(self.fighting_style)
         bs.write_u16(self.skill_level)
@@ -706,11 +705,11 @@ class AddPlayer(Rpc):
             team = None
         skin_id = bs.read_u32()
         pos = bs.read_vec3()
-        facing_angle = bs.read_float()
+        dir_z = bs.read_float()
         color = bs.read_u32()
         fighting_style = bs.read_u8()
         skill_level = bs.read_u16()
-        return AddPlayer(player_id, team, skin_id, pos, facing_angle, color, fighting_style, skill_level)
+        return StartPlayerStream(player_id, team, skin_id, pos, dir_z, color, fighting_style, skill_level)
 
 class SetShopName(Rpc):
     def __init__(self):
@@ -1150,8 +1149,8 @@ class NpcJoin(Rpc):
 ''' S2C
 Adds a message to the kill feed.
 A kill feed message has the following format: KILLER REASON VICTIM
-killer_id: player id of the killer
-victim_id: player id of the victim; this value should be None if there is no victim(e.g. suicide)
+killer_id: player id of the killer; this value should be None if there is no killer(e.g. suicide)
+victim_id: player id of the victim
 reason: a weapon id; see sa/weapon.py
 Note: kill feed(or death chat/window) is the area on the screen on the right(F9)
 '''
@@ -1160,7 +1159,7 @@ class KillFeedMessage(Rpc):
         super().__init__(RPC.KILL_FEED_MESSAGE)
         self.killer_id = killer_id
         self.victim_id = victim_id
-        self.reason = reason
+        self.reason = WEAPON(reason)
 
     def encode_rpc_payload(self, bs):
         bs.write_i16(self.killer_id)
@@ -1170,9 +1169,9 @@ class KillFeedMessage(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         killer_id = bs.read_i16()
+        if killer_id == -1:
+            killer_id = None
         victim_id = bs.read_i16()
-        if victim_id == -1:
-            victim_id = None
         reason = bs.read_u8()
         return KillFeedMessage(killer_id, victim_id, reason)
 
@@ -1260,8 +1259,7 @@ class SetPlayerChatBubble(Rpc):
         color = bs.read_u32()
         draw_distance = bs.read_float()
         expire_time = bs.read_u32()
-        #text = bs.read_dynamic_str8()
-        text=''
+        text = bs.read_dynamic_str8()
         return SetPlayerChatBubble(player_id, text, color, draw_distance, expire_time)
 
 class SendGameTimeUpdate(Rpc):
@@ -1406,15 +1404,20 @@ class SetArmedWeapon(Rpc):
         return SetArmedWeapon()
 
 ''' S2C
+Sets spawn info.
 team: valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
+pos: coordinate where client will spawn
+dir_z: Z component of the direction(orientation) of the player's character and camera(because they are the same value when the player spawns); 0.0 is North
+Note: The client is only able to spawn(even if the server tries to force a spawn) after the server sends SetSpawnInfo
+Note: To make a client spawn after connection, you may send SetSpawnInfo, followed by RequestSpawnResponse(REQUEST_SPAWN.FORCE)
 '''
 class SetSpawnInfo(Rpc):
-    def __init__(self, team=None, skin=SKIN.CJ, pos=Vec3(0.0, 0.0, 3.0), rotation=0.0, weapon1=Weapon(), weapon2=Weapon(), weapon3=Weapon()):
+    def __init__(self, team=None, skin=SKIN.CJ, pos=Vec3(0.0, 0.0, 3.0), dir_z=0.0, weapon1=Weapon(), weapon2=Weapon(), weapon3=Weapon()):
         super().__init__(RPC.SET_SPAWN_INFO)
         self.team = team
         self.skin = SKIN(skin)
         self.pos = pos
-        self.rotation = float(rotation)
+        self.dir_z = float(dir_z)
         self.weapon1 = weapon1
         self.weapon2 = weapon2
         self.weapon3 = weapon3
@@ -1424,7 +1427,7 @@ class SetSpawnInfo(Rpc):
         bs.write_u32(self.skin)
         bs.write_u8(0) # unknown
         bs.write_vec3(self.pos)
-        bs.write_float(self.rotation)
+        bs.write_float(self.dir_z)
         bs.write_u32(self.weapon1.id)
         bs.write_u32(self.weapon2.id)
         bs.write_u32(self.weapon2.id)
@@ -1440,7 +1443,7 @@ class SetSpawnInfo(Rpc):
         skin = bs.read_u32()
         bs.skip_bits(8) # unused
         pos = bs.read_vec3()
-        rotation = bs.read_float()
+        dir_z = bs.read_float()
         weapon1_id = bs.read_u32()
         weapon2_id = bs.read_u32()
         weapon3_id = bs.read_u32()
@@ -1450,7 +1453,7 @@ class SetSpawnInfo(Rpc):
         weapon1 = Weapon(weapon1_id, weapon1_ammo)
         weapon2 = Weapon(weapon2_id, weapon2_ammo)
         weapon3 = Weapon(weapon3_id, weapon3_ammo)
-        return SetSpawnInfo(team, skin, pos, rotation, weapon1, weapon2, weapon3)
+        return SetSpawnInfo(team, skin, pos, dir_z, weapon1, weapon2, weapon3)
 
 ''' S2C
 Sets the team of the specified player.
@@ -2492,15 +2495,16 @@ class RequestClass(Rpc):
 if response is 0 then all other parameters will be ignored
 response: either 1 or 0
 team: new team; valid team values are 0-254; None specifies the player is not in any team(internally it is defined as 255)
+dir_z: Z component of the direction(orientation) of the player's character and camera(because they are the same value when the player spawns); 0.0 is North
 '''
 class RequestClassResponse(Rpc):
-    def __init__(self, response, team=None, skin=None, pos=None, rotation=None, weapon1=None, weapon2=None, weapon3=None):
+    def __init__(self, response, team=None, skin=None, pos=None, dir_z=None, weapon1=None, weapon2=None, weapon3=None):
         super().__init__(RPC.REQUEST_CLASS_RESPONSE)
         self.response = response
         self.team = team
         self.skin = None if skin is None else SKIN(skin)
         self.pos = pos
-        self.rotation = rotation
+        self.dir_z = dir_z
         self.weapon1 = weapon1
         self.weapon2 = weapon2
         self.weapon3 = weapon3
@@ -2513,7 +2517,7 @@ class RequestClassResponse(Rpc):
         bs.write_u32(self.skin)
         bs.write_u8(0) # unused
         bs.write_vec3(self.pos)
-        bs.write_float(self.rotation)
+        bs.write_float(self.dir_z)
         bs.write_u32(self.weapon1.id)
         bs.write_u32(self.weapon2.id)
         bs.write_u32(self.weapon2.id)
@@ -2523,13 +2527,13 @@ class RequestClassResponse(Rpc):
 
     @staticmethod
     def decode_rpc_payload(bs):
-        team = skin = pos = rotation = weapon1 = weapon2 = weapon3 = None
-        if (response := bs.read_u8()) == 1:
+        team = skin = pos = dir_z = weapon1 = weapon2 = weapon3 = None
+        if (response := bool(bs.read_u8())) is True:
             team = bs.read_u8()
             skin = bs.read_u32()
             bs.skip_bits(8) # unused
             pos = bs.read_vec3()
-            rotation = bs.read_float()
+            dir_z = bs.read_float()
             weapon1_id = bs.read_u32()
             weapon2_id = bs.read_u32()
             weapon3_id = bs.read_u32()
@@ -2539,7 +2543,7 @@ class RequestClassResponse(Rpc):
             weapon1 = Weapon(weapon1_id, weapon1_ammo)
             weapon2 = Weapon(weapon2_id, weapon2_ammo)
             weapon3 = Weapon(weapon3_id, weapon3_ammo)
-        return RequestClassResponse(response, team, skin, pos, rotation, weapon1, weapon2, weapon3)
+        return RequestClassResponse(response, team, skin, pos, dir_z, weapon1, weapon2, weapon3)
 RPC.REQUEST_CLASS_RESPONSE.decode_server_rpc_payload = RequestClassResponse.decode_rpc_payload
 
 ''' C2S
@@ -2565,6 +2569,7 @@ class REQUEST_SPAWN(enum.IntEnum):
 ''' S2C
 When the client sends a RequestSpawn RPC, the server should respond with this RPC.
 Note: The server may send this RPC at any point with the REQUEST_SPAWN.FORCE response to make the client spawn or respawn(if already spawned)
+Note: Make sure to send SetSpawnInfo before attempting to make the client spawn(otherwise it won't spawn)
 '''
 class RequestSpawnResponse(Rpc):
     def __init__(self, response):
@@ -2641,6 +2646,11 @@ class SetWantedLevel(Rpc):
         level = bs.read_u8()
         return SetWantedLevel(level)
 
+# resources
+# https://www.mixmods.com.br/2013/07/fontes-das-letras-do-gta-sa/
+# https://team.sa-mp.com/wiki/PlayerTextDrawFont.html
+# https://www.open.mp/docs/scripting/functions/PlayerTextDrawFont
+
 class TEXTDRAW_FLAG(enum.IntEnum):
     BOX = (1 << 7),
     LEFT = (1 << 6),
@@ -2648,22 +2658,24 @@ class TEXTDRAW_FLAG(enum.IntEnum):
     CENTER = (1 << 4),
     PROPORTIONAL = (1 << 3),
 
-# https://www.mixmods.com.br/2013/07/fontes-das-letras-do-gta-sa/
 class TEXTDRAW_STYLE(enum.IntEnum):
-	BECKETT_REGULAR = 0 # Font
-	AHARONI_BOLD    = 1 # Font
-	BANK_GOTHIC     = 2 # Font
-	PRICEDOWN       = 3 # Font
-	SPRITE          = 4 # TXD sprite
-	MODEL           = 5 # Model
+	FONT_BECKETT_REGULAR = 0 # Font
+	FONT_AHARONI_BOLD    = 1 # Font
+	FONT_BANK_GOTHIC     = 2 # Font
+	FONT_PRICEDOWN       = 3 # Font
+	SPRITE               = 4 # TXD sprite
+	MODEL                = 5 # Model
 
 ''' S2C
 Shows a textdraw.
-The x,y coordinate is the top left coordinate for the text draw area based on a 640x480 "canvas" (irrespective of screen resolution).
-flags: see TEXTDRAW_FLAG
+textdraw_id: [0, 2303]
+pos: screen coordinate; Vec2(x, y) based on a 640x480 "imaginary canvas" (irrespective of screen resolution).
+leter_size: Vec2(character_width, character_height); Recommended: height to width ratio of 4 to 1 (e.g. if x is 0.5 then y should be 2).
+flags: a member of TEXTDRAW_FLAG
+style: a member of TEXTDRAW_STYLE
 '''
 class ShowTextdraw(Rpc):
-    def __init__(self, textdraw_id, text, pos, flags=0, letter_size=Vec2(1,1), letter_color=0xffffffff, line_size=Vec2(0,0), box_color=0, shadow=0, outline=0, background_color=0x00000000, style=TEXTDRAW_STYLE.BECKETT_REGULAR, clickable=False, model_id=None, rot=Vec3(0.0, 0.0, 0.0), zoom=1.0, color1=0xffff, color2=0xffff):
+    def __init__(self, textdraw_id, text, pos, flags=0, letter_size=Vec2(1,1), letter_color=0xffffffff, line_size=Vec2(0,0), box_color=0, shadow=0, outline=0, background_color=0x00000000, style=TEXTDRAW_STYLE.FONT_BECKETT_REGULAR, clickable=False, model_id=None, model_dir=None, model_zoom=None, model_color1=None, model_color2=None):
         super().__init__(RPC.SHOW_TEXTDRAW)
         self.textdraw_id = textdraw_id
         self.text = text
@@ -2676,13 +2688,13 @@ class ShowTextdraw(Rpc):
         self.shadow = shadow
         self.outline = outline
         self.background_color = Color(background_color)
-        self.style = style
-        self.clickable = clickable
+        self.style = TEXTDRAW_STYLE(style)
+        self.clickable = bool(clickable)
         self.model_id = model_id
-        self.rot = rot
-        self.zoom = zoom
-        self.color1 = color1
-        self.color2 = color2
+        self.model_dir = model_dir
+        self.model_zoom = model_zoom
+        self.model_color1 = model_color1
+        self.model_color2 = model_color2
 
     def encode_rpc_payload(self, bs):
         bs.write_u16(self.textdraw_id)
@@ -2698,10 +2710,10 @@ class ShowTextdraw(Rpc):
         bs.write_u8(self.clickable)
         bs.write_vec2(self.pos)
         bs.write_u16(0 if self.model_id is None else self.model_id)
-        bs.write_vec3(self.rot)
-        bs.write_float(self.zoom)
-        bs.write_u16(self.color1)
-        bs.write_u16(self.color2)
+        bs.write_vec3(Vec3(0.0, 0.0, 0.0) if self.model_dir is None else self.model_dir)
+        bs.write_float(1.0 if self.model_zoom is None else self.model_zoom)
+        bs.write_i16(-1 if self.model_color1 is None else self.model_color1)
+        bs.write_i16(-1 if self.model_color2 is None else self.model_color2)
         bs.write_dynamic_str16(self.text)
 
     @staticmethod
@@ -2719,14 +2731,14 @@ class ShowTextdraw(Rpc):
         clickable = bs.read_u8()
         pos = bs.read_vec2()
         model_id = bs.read_u16()
-        if model_id == 0:
-            model_id = None
-        rot = bs.read_vec3()
-        zoom = bs.read_float()
-        color1 = bs.read_u16()
-        color2 = bs.read_u16()
+        model_dir = bs.read_vec3()
+        model_zoom = bs.read_float()
+        model_color1 = bs.read_u16()
+        model_color2 = bs.read_u16()
+        if style != TEXTDRAW_STYLE.MODEL:
+            model_id = model_dir = model_zoom = model_color1 = model_color2 = None
         text = bs.read_dynamic_str16()
-        return ShowTextdraw(textdraw_id, text, pos, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, model_id, rot, zoom, color1, color2)
+        return ShowTextdraw(textdraw_id, text, pos, flags, letter_size, letter_color, line_size, box_color, shadow, outline, background_color, style, clickable, model_id, model_dir, model_zoom, model_color1, model_color2)
 
 class HideTextdraw(Rpc):
     def __init__(self, textdraw_id):
@@ -3285,9 +3297,9 @@ class SetCameraBehindPlayer(Rpc):
 Removes the specified player from the world.
 Related: WorldPlayerRemove, PlayerStreamOut
 '''
-class RemovePlayer(Rpc):
+class StopPlayerStream(Rpc):
     def __init__(self, player_id):
-        super().__init__(RPC.REMOVE_PLAYER)
+        super().__init__(RPC.STOP_PLAYER_STREAM)
         self.player_id = player_id
 
     def encode_rpc_payload(self, bs):
@@ -3296,7 +3308,7 @@ class RemovePlayer(Rpc):
     @staticmethod
     def decode_rpc_payload(bs):
         player_id = bs.read_u16()
-        return RemovePlayer(player_id)
+        return StopPlayerStream(player_id)
 
 ''' S2C
 Adds a vehicle to the world.
@@ -3309,7 +3321,7 @@ class AddVehicle(Rpc):
     def __init__(self, vehicle_id, model_id, pos, health=1000.0, dir_z=0.0, interior_color1=0, interior_color2=0, interior=0, door_damage_status=0, panel_damage_status=0, light_damage_status=0, tire_damage_status=0, add_siren=False, mods=[0]*14, paint_job=0, body_color1=0, body_color2=0):
         super().__init__(RPC.ADD_VEHICLE)
         self.vehicle_id = vehicle_id
-        self.model_id = model_id # model id of the vehicle; see sa/vehicle.py
+        self.model_id = VEHICLE(model_id) # model id of the vehicle; see sa/vehicle.py
         self.pos = pos # position of the vehicle
         self.health = health
         self.dir_z = dir_z # Z component of the vehicle's direction; a.k.a. "yaw"

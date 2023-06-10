@@ -1,5 +1,6 @@
 import enum
 import struct
+import math
 
 from .bitstream import *
 from .raknet import Message, MSG
@@ -50,24 +51,25 @@ class DriverSync(Message):
         bs = Bitstream()
         bs.write_i16(self.driver_id)
         bs.write_i16(self.vehicle_id)
-        bs.write_key_data(aself.key_data)
+        bs.write_key_data(self.key_data)
         bs.write_norm_quat(self.dir)
         bs.write_vec3(self.pos)
         bs.write_compressed_vec3(self.velocity)
-        bs.write_u16(self.vehicle_health)
-        bs.write_u8(((int(self.driver_health)&0xff)//7<<4) | ((int(self.driver_armor)//7)&0x0f))
+        bs.write_u16(int(self.vehicle_health))
+        bs.write_bits_num(math.ceil(self.driver_health / 7) & 0x0f, 4)
+        bs.write_bits_num(math.ceil(self.driver_armor / 7) & 0x0f, 4)
         bs.write_bits_num(self.driver_weapon_id, 6)
         bs.write_bits_num(self.key_data.keys >> 16, 2) # remaining bits of key_data.keys
         bs.write_bit(self.siren)
         bs.write_bit(self.landing_gear)
 
-        if self.extra is None:
+        if self.extra is not None:
             bs.write_bit(1)
             bs.write_buffer(self.extra, 32)
         else:
             bs.write_bit(0)
 
-        if self.trailer_id is None:
+        if self.trailer_id is not None:
             bs.write_bit(1)
             bs.write_i16(self.trailer_id)
         else:
@@ -103,8 +105,10 @@ class DriverSync(Message):
         pos = bs.read_vec3()
         velocity = bs.read_compressed_vec3()
         vehicle_health = bs.read_u16()
-        driver_health = min(100, bs.read_bits_num(4) * 7)
-        driver_armor = min(100, bs.read_bits_num(4) * 7)
+        driver_health = bs.read_bits_num(4)
+        driver_health = min(100, driver_health * 7)
+        driver_armor = bs.read_bits_num(4)
+        driver_armor = min(100, driver_armor * 7)
         driver_weapon_id = bs.read_bits_num(6)
         key_data.keys |= (bs.read_bits_num(2) << 16)
         siren = bs.read_bit()
@@ -334,7 +338,7 @@ class BulletSync(Message):
         return BulletSync(None, hit_type, hit_id, origin, hit_pos, offset, weapon_id)
 
 ''' S2C and S2C
-The server must only send PlayerSync after ServerJoin and AddPlayer RPCs have been sent, otherwise the client ignores the sync
+The server must only send PlayerSync after ServerJoin and StartPlayerStream RPCs have been sent, otherwise the client ignores the sync
 
 The client sends PlayerSync periodically to update the server about position, health, ...
 '''
@@ -359,7 +363,8 @@ class PlayerSync(Message):
         bs.write_compressed_key_data(self.key_data)
         bs.write_vec3(self.pos)
         bs.write_norm_quat(self.dir)
-        bs.write_u8(((int(self.health)&0xff)//7<<4) | ((int(self.armor)//7)&0x0f))
+        bs.write_bits_num(math.ceil(self.health / 7) & 0x0f, 4)
+        bs.write_bits_num(math.ceil(self.armor / 7) & 0x0f, 4)
         bs.write_bits_num(self.weapon_id, 6)
         bs.write_bits_num(self.key_data.keys >> 16, 2)
         bs.write_u8(self.special_action)
@@ -390,8 +395,10 @@ class PlayerSync(Message):
         key_data = bs.read_compressed_key_data()
         pos = bs.read_vec3()
         dir = bs.read_norm_quat()
-        health = min(100, bs.read_bits_num(4) * 7)
-        armor = min(100, bs.read_bits_num(4) * 7)
+        health = bs.read_bits_num(4)
+        health = min(100, health * 7)
+        armor = bs.read_bits_num(4)
+        armor = min(100, armor * 7)
         weapon_id = bs.read_bits_num(6)
         key_data.keys |= (bs.read_bits_num(2) << 16)
         special_action = bs.read_u8()

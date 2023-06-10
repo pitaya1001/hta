@@ -1,10 +1,12 @@
+from .common import *
+
 class Player:
     def __init__(self):
-        self.health = None
-        self.armor = None
-        self.money = None
-        self.pos = None # player position as Vec3
-        self.dir = None # player direction as Quat
+        self.health = 100
+        self.armor = 0
+        self.money = 0
+        self.pos = Vec3(0.0, 0.0, 0.0) # player position as Vec3
+        self.dir = Quat(0.0, 0.0, 0.0, 0.0) # player direction as Quat
         self.cam_pos = None # camera position as Vec3
         self.cam_dir = None # camera direction as Vec3(Euler angles)
         self.skin_id = None
